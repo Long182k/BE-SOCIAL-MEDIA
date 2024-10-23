@@ -11,6 +11,7 @@ import { LocalAuthGuard } from 'src/auth/@guard/local-auth.guard';
 import { Public } from './@decorator/public';
 import { RefreshAuthGuard } from './@guard/refresh-auth.guard';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './@guard/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -38,6 +39,12 @@ export class AuthController {
   @Post('refresh')
   async refresh(@Request() req) {
     return this.authService.refreshToken(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('signout')
+  async signOut(@Request() req) {
+    return await this.authService.signOut(req.user.userId);
   }
 
   @Get('profile')

@@ -1,8 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import refreshTokenJwtConfig from './@config/refresh_token-jwt.config'; // Adjust the path as needed
 import { ConfigType } from '@nestjs/config';
+import * as argon from 'argon2';
+import { UpdateHashedRefreshTokenDTO } from 'src/users/dto/update-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -13,10 +15,12 @@ export class AuthService {
     private refreshTokenConfig: ConfigType<typeof refreshTokenJwtConfig>,
   ) {}
 
-  async validateUser(username: string, pass: string): Promise<any> {
-    const user = await this.usersService.findOne(username);
-    if (user && user.passwordHash === pass) {
-      const { passwordHash, ...result } = user;
+  async validateUser(userName: string, pass: string): Promise<any> {
+    const user = await this.usersService.findOne(userName);
+    const isVerifiedPassword = await argon.verify(user.hashedPassword, pass);
+
+    if (user && isVerifiedPassword) {
+      const { hashedPassword, ...result } = user;
       return result;
     }
 
@@ -24,20 +28,78 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { username: user.username, sub: user.id };
+    const { accessToken, refreshToken } = await this.generateTokens(user);
+    const hashedRefreshToke = await argon.hash(refreshToken);
+    const payloadUpdate: UpdateHashedRefreshTokenDTO = {
+      userId: user.id,
+      hashedRefreshToken: hashedRefreshToke,
+    };
+
+    await this.usersService.updateHashedRefreshToken(payloadUpdate);
+
+    // Store hashedRefreshToken into Redis
+
     return {
-      access_token: this.jwtService.sign(payload),
-      refresh_token: this.jwtService.sign(payload, this.refreshTokenConfig),
-      userId: payload.sub,
-      username: payload.username,
+      accessToken,
+      refreshToken,
+      userId: user.id,
+      userName: user.userName,
     };
   }
 
-  refreshToken(user: any) {
-    const payload = { username: user.username, sub: user.id };
+  async generateTokens(user: any) {
+
+    const payload = { userId: user.id, userName: user.userName };
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload),
+      this.jwtService.signAsync(payload, this.refreshTokenConfig),
+    ]);
 
     return {
-      access_token: this.jwtService.sign(payload),
+      accessToken,
+      refreshToken,
     };
+  }
+
+  async refreshToken(user: any) {
+    const { accessToken, refreshToken } = await this.generateTokens(user);
+
+    const hashedRefreshToke = await argon.hash(refreshToken);
+    const payloadUpdate: UpdateHashedRefreshTokenDTO = {
+      userId: user.id,
+      hashedRefreshToken: hashedRefreshToke,
+    };
+
+    return {
+      id: user.id,
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async validateRefreshToken(userId: string, refreshToken: string) {
+    const user = await this.usersService.findUserByKeyword({ id: userId });
+
+    if (!user || !user.hashedRefreshToken)
+      throw new UnauthorizedException('Invalid Refresh Token');
+
+    const isRefreshTokenMatched = await argon.verify(
+      user.hashedRefreshToken,
+      refreshToken,
+    );
+
+    if (!isRefreshTokenMatched)
+      throw new UnauthorizedException('Invalid Refresh Token');
+
+    return { id: userId };
+  }
+
+  async signOut(userId: string) {
+    const payloadUpdate: UpdateHashedRefreshTokenDTO = {
+      userId: userId,
+      hashedRefreshToken: null,
+    };
+
+    return await this.usersService.updateHashedRefreshToken(payloadUpdate);
   }
 }

@@ -24,7 +24,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       context.getClass(),
     ]);
     if (isPublic) {
-      // 💡 See this condition
       return true;
     }
 
@@ -37,17 +36,16 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_SECRET,
       });
-      // 💡 We're assigning the payload to the request object here
-      // so that we can access it in our route handlers
       request['user'] = payload;
     } catch {
       throw new UnauthorizedException();
     }
+
     return true;
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
-    const authHeader = request.headers['authorization']; // Access the header using the correct syntax
+    const authHeader = request.headers['authorization'];
     if (!authHeader) return undefined;
 
     const [type, token] = authHeader.split(' ');

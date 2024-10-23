@@ -1,19 +1,18 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  UseGuards,
-  Request,
+  Get,
+  Param,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { CreateUserDTO } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { LocalAuthGuard } from 'src/auth/@guard/local-auth.guard';
+import { Public } from 'src/auth/@decorator/public';
 import { AuthService } from 'src/auth/auth.service';
+import { CreateUserDTO } from './dto/create-user.dto';
+import { GetUserByKeywordDTO } from './dto/get-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
@@ -22,6 +21,7 @@ export class UsersController {
     private authService: AuthService,
   ) {}
 
+  @Public()
   @Post()
   create(@Body() createUserDto: CreateUserDTO) {
     return this.usersService.createUser(createUserDto);
@@ -32,9 +32,14 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @Get('/username')
-  findOne(@Param('username') username: string) {
-    return this.usersService.findOne(username);
+  @Get('/userName')
+  findOne(@Param('userName') userName: string) {
+    return this.usersService.findOne(userName);
+  }
+
+  @Get('/keyword')
+  async findUserByKeyword(@Body() keyword: GetUserByKeywordDTO) {
+    return await this.usersService.findUserByKeyword(keyword);
   }
 
   @Patch(':id')

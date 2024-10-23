@@ -9,12 +9,14 @@ datasource db {
 
 model User {
   id                    String         @id @default(uuid())
-  username              String         @unique
+  userName              String         @unique
   email                 String?        @unique
   displayName           String
-  passwordHash          String?
+  hashedPassword        String
+  hashedRefreshToken    String?
   avatarUrl             String?
   bio                   String?
+  isActive              Boolean        @default(true)
   createdAt             DateTime       @default(now())
   bookmarks             Bookmark[]
   comments              Comment[]

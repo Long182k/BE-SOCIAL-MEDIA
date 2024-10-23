@@ -7,4 +7,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     console.log('Connect to MYSQL successfully');
     await this.$connect();
   }
+  async onModuleDestroy() {
+    console.log('Disconnect to MYSQL successfully');
+    await this.$disconnect();
+  }
 }

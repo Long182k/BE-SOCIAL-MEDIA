@@ -1,18 +1,51 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma, User } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
-import { User, Prisma } from '@prisma/client';
 import { CreateUserDTO } from './dto/create-user.dto';
-import { v4 as uuidv4 } from 'uuid';
+import { GetUserByKeywordDTO } from './dto/get-user.dto';
+import { UpdateHashedRefreshTokenDTO } from './dto/update-user.dto';
+import * as argon from 'argon2';
 
 @Injectable()
 export class UserRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findUserByUserName(username: string): Promise<User | null> {
+  async findUserByUserName(userName: string): Promise<User | null> {
     {
       return await this.prisma.user.findUnique({
-        where: { username },
+        where: { userName },
       });
+    }
+  }
+
+  async findUserByKeyword(keyword: GetUserByKeywordDTO): Promise<User | null> {
+    const { userName, id, email, displayName, avatarUrl, bio } = keyword;
+    {
+      const user = await this.prisma.user.findFirst({
+        where: {
+          OR: [
+            { userName },
+            { id },
+            { email },
+            { displayName },
+            { avatarUrl },
+            { bio },
+          ],
+        },
+        include: {
+          posts: true,
+          comments: true,
+          likes: true,
+          followers: true,
+          following: true,
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found.');
+      }
+
+      return user;
     }
   }
 
@@ -34,13 +67,14 @@ export class UserRepository {
   }
 
   async createUser(data: CreateUserDTO): Promise<User> {
-    const { username, email, displayName, avatarUrl, bio } = data;
+    const { userName, password, email, displayName, avatarUrl, bio } = data;
+    const hashedPassword = await argon.hash(password);
 
     return await this.prisma.user.create({
       data: {
-        username,
+        userName,
         email,
-        passwordHash: uuidv4(),
+        hashedPassword,
         displayName,
         avatarUrl,
         bio,
@@ -48,14 +82,15 @@ export class UserRepository {
     });
   }
 
-  async updateUser(params: {
-    where: Prisma.UserWhereUniqueInput;
-    data: Prisma.UserUpdateInput;
-  }): Promise<User> {
-    const { where, data } = params;
+  async updateHashedRefreshToken(
+    params: UpdateHashedRefreshTokenDTO,
+  ): Promise<User> {
+    const { hashedRefreshToken, userId } = params;
     return this.prisma.user.update({
-      data,
-      where,
+      where: { id: userId },
+      data: {
+        hashedRefreshToken,
+      },
     });
   }
 

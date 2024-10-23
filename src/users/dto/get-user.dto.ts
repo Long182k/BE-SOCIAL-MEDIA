@@ -1,27 +1,27 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-export class CreateUserDTO {
+export class GetUserByKeywordDTO {
   @IsString()
-  @IsNotEmpty()
-  userName: string;
+  @IsOptional()
+  userName?: string;
 
   @IsString()
-  @IsNotEmpty()
-  password: string;
+  @IsOptional()
+  id?: string;
 
   @IsEmail()
   @IsOptional()
-  email: string;
+  email?: string;
 
   @IsString()
   @IsOptional()
-  displayName: string;
+  displayName?: string;
 
   @IsString()
   @IsOptional()
-  avatarUrl: string;
+  avatarUrl?: string;
 
   @IsString()
   @IsOptional()
-  bio: string;
+  bio?: string;
 }
