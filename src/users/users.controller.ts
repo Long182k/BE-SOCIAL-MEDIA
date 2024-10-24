@@ -1,15 +1,7 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-} from '@nestjs/common';
-import { Public } from 'src/auth/@decorator/public';
+import { Body, Controller, Delete, Get, Param, Patch } from '@nestjs/common';
+import { Roles } from 'src/auth/@decorator/roles.decorator';
 import { AuthService } from 'src/auth/auth.service';
-import { CreateUserDTO } from './dto/create-user.dto';
+import { ROLE } from 'src/auth/util/@enum/role.enum';
 import { GetUserByKeywordDTO } from './dto/get-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
@@ -17,15 +9,9 @@ import { UsersService } from './users.service';
 @Controller('users')
 export class UsersController {
   constructor(
-    private readonly usersService: UsersService,
+    private usersService: UsersService,
     private authService: AuthService,
   ) {}
-
-  @Public()
-  @Post()
-  create(@Body() createUserDto: CreateUserDTO) {
-    return this.usersService.createUser(createUserDto);
-  }
 
   @Get()
   findAll() {
@@ -37,6 +23,7 @@ export class UsersController {
     return this.usersService.findOne(userName);
   }
 
+  @Roles(ROLE.ADMIN)
   @Get('/keyword')
   async findUserByKeyword(@Body() keyword: GetUserByKeywordDTO) {
     return await this.usersService.findUserByKeyword(keyword);

@@ -48,8 +48,12 @@ export class AuthService {
   }
 
   async generateTokens(user: any) {
+    const payload = {
+      userId: user.id,
+      userName: user.userName,
+      role: user.role,
+    };
 
-    const payload = { userId: user.id, userName: user.userName };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload),
       this.jwtService.signAsync(payload, this.refreshTokenConfig),
@@ -92,6 +96,15 @@ export class AuthService {
       throw new UnauthorizedException('Invalid Refresh Token');
 
     return { id: userId };
+  }
+
+  async validateJWTUser(userId: string) {
+    const user = await this.usersService.findUserByKeyword({ id: userId });
+
+    if (!user || !user.hashedRefreshToken)
+      throw new UnauthorizedException('User Not Found');
+
+    return { userId: user.id, userName: user.userName, role: user.role };
   }
 
   async signOut(userId: string) {

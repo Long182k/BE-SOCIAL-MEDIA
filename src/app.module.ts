@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import access_tokenJwtConfig from './auth/@config/access_token-jwt.config';
 import { ConfigModule } from '@nestjs/config';
 import refresh_tokenJwtConfig from './auth/@config/refresh_token-jwt.config';
+import { RolesGuard } from './auth/@guard/roles.guard';
 
 @Module({
   imports: [
@@ -24,6 +25,10 @@ import refresh_tokenJwtConfig from './auth/@config/refresh_token-jwt.config';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

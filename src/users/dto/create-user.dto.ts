@@ -11,17 +11,17 @@ export class CreateUserDTO {
 
   @IsEmail()
   @IsOptional()
-  email: string;
+  email?: string;
 
   @IsString()
   @IsOptional()
-  displayName: string;
+  displayName?: string;
 
   @IsString()
   @IsOptional()
-  avatarUrl: string;
+  avatarUrl?: string;
 
   @IsString()
   @IsOptional()
-  bio: string;
+  bio?: string;
 }
