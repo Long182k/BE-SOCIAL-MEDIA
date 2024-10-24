@@ -9,12 +9,15 @@ datasource db {
 
 model User {
   id                    String         @id @default(uuid())
-  username              String         @unique
+  userName              String         @unique
   email                 String?        @unique
+  role                  Role           @default(USER)
   displayName           String
-  passwordHash          String?
+  hashedPassword        String
+  hashedRefreshToken    String?
   avatarUrl             String?
   bio                   String?
+  isActive              Boolean        @default(true)
   createdAt             DateTime       @default(now())
   bookmarks             Bookmark[]
   comments              Comment[]
@@ -29,13 +32,13 @@ model User {
 }
 
 model Follow {
-  id          String @id @default(uuid()) // Add primary key with auto-generated ID
+  id          String @id @default(uuid())
   followerId  String
   followingId String
   follower    User   @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
   following   User   @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
 
-  @@unique([followerId, followingId]) // Ensure unique follow relationships
+  @@unique([followerId, followingId])
   @@index([followingId], map: "follows_followingId_fkey")
   @@map("follows")
 }
@@ -83,7 +86,7 @@ model Comment {
 }
 
 model Like {
-  id     String @id @default(uuid()) // Add primary key
+  id     String @id @default(uuid())
   userId String
   postId String
   post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -134,4 +137,9 @@ enum NotificationType {
 enum MediaType {
   IMAGE
   VIDEO
+}
+
+enum Role {
+  ADMIN
+  USER
 }

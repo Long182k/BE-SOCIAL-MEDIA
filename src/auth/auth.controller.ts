@@ -1,0 +1,67 @@
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import { LocalAuthGuard } from 'src/auth/@guard/local-auth.guard';
+import { Public } from './@decorator/public';
+import { RefreshAuthGuard } from './@guard/refresh-auth.guard';
+import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './@guard/jwt-auth.guard';
+import { CreateUserDTO } from 'src/users/dto/create-user.dto';
+import { UsersService } from 'src/users/users.service';
+
+@Controller('auth')
+export class AuthController {
+  constructor(
+    private authService: AuthService,
+    private usersService: UsersService,
+  ) {}
+
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  @Post('/register')
+  create(@Body() createUserDto: CreateUserDTO) {
+    return this.usersService.createUser(createUserDto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  @UseGuards(LocalAuthGuard)
+  @Post('/login')
+  async login(@Request() req) {
+    return this.authService.login(req.user);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  @UseGuards(LocalAuthGuard)
+  @Post('logout')
+  async logout(@Request() req) {
+    return req.logout();
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  @UseGuards(RefreshAuthGuard)
+  @Post('refresh')
+  async refresh(@Request() req) {
+    return this.authService.refreshToken(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('signout')
+  async signOut(@Request() req) {
+    return await this.authService.signOut(req.user.userId);
+  }
+
+  @Get('profile')
+  getProfile(@Request() req) {
+    return req.user;
+  }
+}
