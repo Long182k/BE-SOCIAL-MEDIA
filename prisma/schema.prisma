@@ -10,9 +10,9 @@ datasource db {
 model User {
   id                    String         @id @default(uuid())
   userName              String         @unique
-  email                 String?        @unique
+  email                 String         @unique
   role                  Role           @default(USER)
-  displayName           String
+  displayName           String?
   hashedPassword        String
   hashedRefreshToken    String?
   avatarUrl             String?
