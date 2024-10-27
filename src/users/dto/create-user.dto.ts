@@ -10,18 +10,6 @@ export class CreateUserDTO {
   password: string;
 
   @IsEmail()
-  @IsOptional()
-  email?: string;
-
-  @IsString()
-  @IsOptional()
-  displayName?: string;
-
-  @IsString()
-  @IsOptional()
-  avatarUrl?: string;
-
-  @IsString()
-  @IsOptional()
-  bio?: string;
+  @IsNotEmpty()
+  email: string;
 }

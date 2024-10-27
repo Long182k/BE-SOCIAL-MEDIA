@@ -15,9 +15,12 @@ export class AuthService {
     private refreshTokenConfig: ConfigType<typeof refreshTokenJwtConfig>,
   ) {}
 
-  async validateUser(userName: string, pass: string): Promise<any> {
+  async validateUser(userName: string, password: string): Promise<any> {
     const user = await this.usersService.findOne(userName);
-    const isVerifiedPassword = await argon.verify(user.hashedPassword, pass);
+    const isVerifiedPassword = await argon.verify(
+      user.hashedPassword,
+      password,
+    );
 
     if (user && isVerifiedPassword) {
       const { hashedPassword, ...result } = user;
@@ -84,16 +87,18 @@ export class AuthService {
   async validateRefreshToken(userId: string, refreshToken: string) {
     const user = await this.usersService.findUserByKeyword({ id: userId });
 
-    if (!user || !user.hashedRefreshToken)
+    if (!user || !user.hashedRefreshToken) {
       throw new UnauthorizedException('Invalid Refresh Token');
+    }
 
     const isRefreshTokenMatched = await argon.verify(
       user.hashedRefreshToken,
       refreshToken,
     );
 
-    if (!isRefreshTokenMatched)
+    if (!isRefreshTokenMatched) {
       throw new UnauthorizedException('Invalid Refresh Token');
+    }
 
     return { id: userId };
   }
@@ -101,8 +106,9 @@ export class AuthService {
   async validateJWTUser(userId: string) {
     const user = await this.usersService.findUserByKeyword({ id: userId });
 
-    if (!user || !user.hashedRefreshToken)
+    if (!user || !user.hashedRefreshToken) {
       throw new UnauthorizedException('User Not Found');
+    }
 
     return { userId: user.id, userName: user.userName, role: user.role };
   }

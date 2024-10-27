@@ -67,19 +67,20 @@ export class UserRepository {
   }
 
   async createUser(data: CreateUserDTO): Promise<User> {
-    const { userName, password, email, displayName, avatarUrl, bio } = data;
+    const { userName, password, email } = data;
     const hashedPassword = await argon.hash(password);
 
-    return await this.prisma.user.create({
+    const result = await this.prisma.user.create({
       data: {
         userName,
         email,
         hashedPassword,
-        displayName,
-        avatarUrl,
-        bio,
       },
     });
+
+    delete result.hashedPassword;
+
+    return result;
   }
 
   async updateHashedRefreshToken(
