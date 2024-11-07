@@ -103,6 +103,23 @@ CREATE TABLE `notifications` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+
+-- CreateTable
+CREATE TABLE `products` (
+    `id` VARCHAR(191) NOT NULL,
+    `title` VARCHAR(191) NOT NULL,
+    `price` DECIMAL(10, 2) NOT NULL,
+    `location` VARCHAR(191) NOT NULL,
+    `image` VARCHAR(191) DEFAULT NULL,
+    `rating` DECIMAL(2, 1) DEFAULT 0,
+    `userId` VARCHAR(191) NOT NULL, -- Foreign key to link to the user who created the product
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `products_userId_fkey`(`userId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
 -- AddForeignKey
 ALTER TABLE `follows` ADD CONSTRAINT `follows_followerId_fkey` FOREIGN KEY (`followerId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -141,3 +158,6 @@ ALTER TABLE `notifications` ADD CONSTRAINT `notifications_postId_fkey` FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE `notifications` ADD CONSTRAINT `notifications_recipientId_fkey` FOREIGN KEY (`recipientId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `products` ADD CONSTRAINT `products_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
