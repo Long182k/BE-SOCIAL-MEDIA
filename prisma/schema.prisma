@@ -27,9 +27,28 @@ model User {
   issuedNotifications   Notification[] @relation("Issuer")
   receivedNotifications Notification[] @relation("Recipient")
   posts                 Post[]
+  products              Product[] 
 
   @@map("users")
 }
+
+model Product {
+  id         String   @id @default(uuid())
+  title      String
+  price      Decimal  @db.Decimal(10, 2)
+  location   String
+  image      String?  
+  rating     Decimal? @db.Decimal(2, 1) @default(0)
+  userId     String
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("products") 
+  @@index([userId])
+}
+
+
 
 model Follow {
   id          String @id @default(uuid())
