@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDTO } from './dto/create-user.dto';
+import { GetUserByKeywordDTO } from './dto/get-user.dto';
 import {
   UpdateHashedRefreshTokenDTO,
   UpdateUserDto,
 } from './dto/update-user.dto';
 import { UserRepository } from './users.repository';
-import { Prisma } from '@prisma/client';
-import { GetUserByKeywordDTO } from './dto/get-user.dto';
 
 @Injectable()
 export class UsersService {

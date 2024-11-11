@@ -10,6 +10,7 @@ import access_tokenJwtConfig from './auth/@config/access_token-jwt.config';
 import { ConfigModule } from '@nestjs/config';
 import refresh_tokenJwtConfig from './auth/@config/refresh_token-jwt.config';
 import { RolesGuard } from './auth/@guard/roles.guard';
+import { PostsModule } from './posts/posts.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { RolesGuard } from './auth/@guard/roles.guard';
     JwtModule.registerAsync(access_tokenJwtConfig.asProvider()),
     ConfigModule.forFeature(access_tokenJwtConfig),
     ConfigModule.forFeature(refresh_tokenJwtConfig),
+    PostsModule,
   ],
   controllers: [UsersController],
   providers: [
