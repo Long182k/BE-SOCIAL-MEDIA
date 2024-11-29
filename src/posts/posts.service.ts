@@ -112,4 +112,78 @@ export class PostsService {
       where: { id },
     });
   }
+
+  async createPost(userId: string, content: string) {
+    return this.prisma.post.create({
+      data: {
+        content,
+        userId,
+      },
+      include: {
+        user: true,
+        likes: true,
+        comments: true,
+        attachments: true,
+      },
+    });
+  }
+
+  async getPosts(userId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    return this.prisma.post.findMany({
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        user: true,
+        likes: true,
+        comments: true,
+        attachments: true,
+      },
+    });
+  }
+
+  async likePost(userId: string, postId: string) {
+    return this.prisma.like.create({
+      data: {
+        userId,
+        postId,
+      },
+    });
+  }
+
+  async createComment(userId: string, postId: string, content: string) {
+    const comment = await this.prisma.comment.create({
+      data: {
+        content,
+        userId,
+        postId,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    // Create notification for post owner
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { userId: true },
+    });
+
+    if (post && post.userId !== userId) {
+      await this.prisma.notification.create({
+        data: {
+          type: 'COMMENT',
+          recipientId: post.userId,
+          issuerId: userId,
+          postId,
+        },
+      });
+    }
+
+    return comment;
+  }
 }

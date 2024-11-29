@@ -11,6 +11,8 @@ import { ConfigModule } from '@nestjs/config';
 import refresh_tokenJwtConfig from './auth/@config/refresh_token-jwt.config';
 import { RolesGuard } from './auth/@guard/roles.guard';
 import { PostsModule } from './posts/posts.module';
+import { FileModule } from './file/file.module';
+import { SocketModule } from './socket/chat.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { PostsModule } from './posts/posts.module';
     ConfigModule.forFeature(access_tokenJwtConfig),
     ConfigModule.forFeature(refresh_tokenJwtConfig),
     PostsModule,
+    FileModule,
+    SocketModule,
   ],
   controllers: [UsersController],
   providers: [
