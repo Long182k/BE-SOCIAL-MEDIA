@@ -8,25 +8,28 @@ datasource db {
 }
 
 model User {
-  id                    String         @id @default(uuid())
-  userName              String         @unique
-  email                 String         @unique
-  role                  Role           @default(USER)
+  id                    String            @id @default(uuid())
+  userName              String            @unique
+  email                 String            @unique
+  role                  Role              @default(USER)
   displayName           String?
   hashedPassword        String
   hashedRefreshToken    String?
   avatarUrl             String?
   bio                   String?
-  isActive              Boolean        @default(true)
-  createdAt             DateTime       @default(now())
+  isActive              Boolean           @default(true)
+  createdAt             DateTime          @default(now())
   bookmarks             Bookmark[]
   comments              Comment[]
-  following             Follow[]       @relation("Following")
-  followers             Follow[]       @relation("Followers")
+  following             Follow[]          @relation("Following")
+  followers             Follow[]          @relation("Followers")
   likes                 Like[]
-  issuedNotifications   Notification[] @relation("Issuer")
-  receivedNotifications Notification[] @relation("Recipient")
+  issuedNotifications   Notification[]    @relation("Issuer")
+  receivedNotifications Notification[]    @relation("Recipient")
   posts                 Post[]
+  ChatParticipant       ChatParticipant[]
+  ChatMessage           ChatMessage[]
+  ChatRoom              ChatRoom[]
 
   @@map("users")
 }
@@ -65,7 +68,7 @@ model Media {
   type      MediaType
   url       String
   createdAt DateTime  @default(now())
-  post      Post?     @relation(fields: [postId], references: [id])
+  post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId], map: "post_media_postId_fkey")
   @@map("post_media")
@@ -128,6 +131,62 @@ model Notification {
   @@map("notifications")
 }
 
+model ChatRoom {
+  id           String            @id @default(cuid())
+  name         String
+  type         ChatRoomType      @default(DIRECT)
+  creatorId    String
+  participants ChatParticipant[]
+  messages     ChatMessage[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  User         User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String?
+
+  @@index([creatorId])
+}
+
+model ChatParticipant {
+  id         String   @id @default(cuid())
+  userId     String
+  chatRoomId String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  joinedAt   DateTime @default(now())
+
+  @@unique([userId, chatRoomId])
+  @@index([userId])
+  @@index([chatRoomId])
+}
+
+model ChatMessage {
+  id          String           @id @default(cuid())
+  content     String
+  type        String           @default("MESSAGE")
+  senderId    String
+  receiverId  String
+  chatRoomId  String
+  user        User             @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  chatRoom    ChatRoom         @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  attachments ChatAttachment[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([senderId])
+  @@index([chatRoomId])
+}
+
+model ChatAttachment {
+  id        String             @id @default(cuid())
+  type      ChatAttachmentType @default(IMAGE)
+  url       String
+  messageId String
+  message   ChatMessage        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  createdAt DateTime           @default(now())
+
+  @@index([messageId])
+}
+
 enum NotificationType {
   LIKE
   FOLLOW
@@ -142,4 +201,14 @@ enum MediaType {
 enum Role {
   ADMIN
   USER
+}
+
+enum ChatRoomType {
+  DIRECT
+  GROUP
+}
+
+enum ChatAttachmentType {
+  IMAGE
+  VIDEO
 }

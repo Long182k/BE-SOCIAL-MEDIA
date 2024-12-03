@@ -40,7 +40,7 @@ export class AuthService {
 
     await this.usersService.updateHashedRefreshToken(payloadUpdate);
 
-    // Store hashedRefreshToken into Redis
+    // TODO: Store hashedRefreshToken into Redis
 
     return {
       accessToken,
@@ -115,7 +115,7 @@ export class AuthService {
 
   async signOut(userId: string) {
     const payloadUpdate: UpdateHashedRefreshTokenDTO = {
-      userId: userId,
+      userId,
       hashedRefreshToken: null,
     };
 

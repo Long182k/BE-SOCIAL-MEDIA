@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Request,
   UseGuards,
@@ -40,10 +41,9 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Public()
-  @UseGuards(LocalAuthGuard)
-  @Post('logout')
-  async logout(@Request() req) {
-    return req.logout();
+  @Post('/logout/:userId')
+  async logout(@Param('userId') userId: string) {
+    return await this.authService.signOut(userId);
   }
 
   @HttpCode(HttpStatus.OK)

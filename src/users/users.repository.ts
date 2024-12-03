@@ -49,21 +49,25 @@ export class UserRepository {
     }
   }
 
-  async findAllUsers(params: {
-    skip?: number;
-    take?: number;
-    cursor?: Prisma.UserWhereUniqueInput;
-    where?: Prisma.UserWhereInput;
-    orderBy?: Prisma.UserOrderByWithRelationInput;
-  }): Promise<User[]> {
-    const { skip, take, cursor, where, orderBy } = params;
-    return this.prisma.user.findMany({
-      skip,
-      take,
-      cursor,
-      where,
-      orderBy,
-    });
+  async findAllUsers() //   params: {
+  //   skip?: number;
+  //   take?: number;
+  //   cursor?: Prisma.UserWhereUniqueInput;
+  //   where?: Prisma.UserWhereInput;
+  //   orderBy?: Prisma.UserOrderByWithRelationInput;
+  // }
+  : Promise<User[]> {
+    // const { skip, take, cursor, where, orderBy } = params;
+    return this.prisma.user
+      .findMany
+      //   {
+      //   skip,
+      //   take,
+      //   cursor,
+      //   where,
+      //   orderBy,
+      // }
+      ();
   }
 
   async createUser(data: CreateUserDTO): Promise<User> {
