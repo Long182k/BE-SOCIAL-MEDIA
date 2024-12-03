@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-type ChatRoomType = 'DIRECT' | 'GROUP';
+export type ChatRoomType = 'DIRECT' | 'GROUP';
 
 export class CreateDirectChatDTO {
   @IsOptional()
@@ -9,7 +9,7 @@ export class CreateDirectChatDTO {
 
   @IsNotEmpty()
   @IsString()
-  type: ChatRoomType;
+  type?: ChatRoomType;
 
   @IsNotEmpty()
   @IsString()

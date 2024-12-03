@@ -4,10 +4,9 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
 import access_tokenJwtConfig from 'src/auth/@config/access_token-jwt.config';
 import refresh_tokenJwtConfig from 'src/auth/@config/refresh_token-jwt.config';
 import { PrismaService } from 'src/prisma.service';
-import { SocketService } from './socket.service';
-import { ChatController } from './chat.controller';
 import { ChatMessageService } from './chat-message.service';
 import { ChatRoomService } from './chat-room.service';
+import { ChatController } from './chat.controller';
 import { ChatGateway } from './chat.gateway';
 
 @Module({
@@ -18,7 +17,6 @@ import { ChatGateway } from './chat.gateway';
   ],
   controllers: [ChatController],
   providers: [
-    SocketService,
     ChatMessageService,
     ChatRoomService,
     PrismaService,
@@ -26,6 +24,6 @@ import { ChatGateway } from './chat.gateway';
     ChatController,
     ChatGateway,
   ],
-  exports: [SocketService, ChatMessageService, ChatRoomService],
+  exports: [ChatMessageService, ChatRoomService],
 })
 export class SocketModule {}

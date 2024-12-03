@@ -3,10 +3,13 @@ import {
   OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
-import { Socket } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { ChatRoomService } from './chat-room.service';
 import { Public } from 'src/auth/@decorator/public';
+import { Logger } from '@nestjs/common';
+import { ChatRoomType } from './dto/chat.dto';
 
 @Public()
 @WebSocketGateway({
@@ -17,6 +20,8 @@ import { Public } from 'src/auth/@decorator/public';
   },
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer() server: Server;
+  private logger: Logger = new Logger('MessageGateway');
   constructor(private readonly chatRoomService: ChatRoomService) {}
 
   // Map for managing user socket connections
@@ -32,7 +37,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (userId) {
       // Map the userId to the connected socket ID
       this.userSocketMap[userId] = client.id;
-      console.log(`Client connected: ${client.id}, User ID: ${userId}`);
+      this.logger.log(
+        client.id,
+        `Client connected: ${client.id}, User ID: ${userId}`,
+      );
     }
 
     // Store the client socket instance
@@ -46,7 +54,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Handle disconnection
    */
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+    this.logger.log(client.id, `Client disconnected: ${client.id}`);
 
     // Remove userId from userSocketMap
     const userId = Object.keys(this.userSocketMap).find(
@@ -66,7 +74,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   private broadcastOnlineUsers() {
     const onlineUserIds = Object.keys(this.userSocketMap);
-    console.log('Online users:', onlineUserIds);
+    this.logger.log(`Online users ${onlineUserIds}`);
+
+    // console.log('Online users:', onlineUserIds);
     this.connectedClients.forEach((socket) => {
       socket.emit('getOnlineUsers', onlineUserIds);
     });
@@ -83,24 +93,44 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Handle sending a message
    */
   @SubscribeMessage('sendMessage')
-  async handleMessage(
-    client: Socket,
-    payload: { chatRoomId: string; userId: string; content: string },
-  ) {
-    const { chatRoomId, userId, content } = payload;
+  async handleMessage(client: Socket, payload: any) {
+    console.log('🚀  payload:SubscribeMessage ', payload);
+
+    const { chatRoomId, senderId, content, receiverId, type } = payload;
 
     // Get the chat room and notify all participants except the sender
-    const chatRoom = await this.chatRoomService.getChatRoom(userId);
+    const chatRoom = await this.chatRoomService.getChatRoom(senderId);
 
-    chatRoom.participants.forEach((participant) => {
-      if (participant.userId !== userId) {
-        const receiverSocketId = this.getReceiverSocketId(participant.userId);
-        if (receiverSocketId) {
-          const receiverSocket = this.connectedClients.get(receiverSocketId);
-          receiverSocket?.emit('receiveMessage', payload);
-        }
+    const receiverSocketId = this.userSocketMap[receiverId];
+    console.log('🚀  receiverSocketId:', receiverSocketId);
+
+    // emit.to(receiverSocketId).emit('newMessage', {
+    //   chatRoomId,
+    //   senderId,
+    //   content,
+    //   receiverId,
+    // });
+
+    const message = await this.chatRoomService.createDirectChat(payload);
+    console.log('🚀  message:', message);
+
+    this.server.to(receiverSocketId).emit('newMessage', payload, (ack) => {
+      if (ack) {
+        console.log('Message delivered successfully:', ack);
+      } else {
+        console.error('Message delivery failed.');
       }
     });
+
+    // chatRoom.participants.forEach((participant) => {
+    //   if (participant.userId !== senderId) {
+    //     const receiverSocketId = this.getReceiverSocketId(participant.userId);
+    //     if (receiverSocketId) {
+    //       const receiverSocket = this.connectedClients.get(receiverSocketId);
+    //       receiverSocket?.emit('receiveMessage', payload);
+    //     }
+    //   }
+    // });
   }
 
   /**

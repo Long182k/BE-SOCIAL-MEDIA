@@ -16,7 +16,7 @@ export class ChatMessageService {
     const newMessage = await this.prisma.chatMessage.create({
       data: {
         content,
-        type: 'MESSAGE',
+        type: 'DIRECT',
         senderId,
         receiverId,
         chatRoomId,
@@ -26,15 +26,18 @@ export class ChatMessageService {
       },
     });
 
-    // Use ChatGateway to get the receiver's socket ID
-    const receiverSocketId = this.chatGateway.getReceiverSocketId(receiverId);
+    // // Use ChatGateway to get the receiver's socket ID
+    // const receiverSocketId = this.chatGateway.getReceiverSocketId(receiverId);
+    // console.log('🚀  receiverSocketId:', receiverSocketId);
 
-    // If the receiver is online, emit the message to their socket
-    if (receiverSocketId) {
-      // Use the `io` instance from ChatGateway to emit the message
-      const io = this.chatGateway['connectedClients'].get(receiverSocketId);
-      io?.emit('newMessage', newMessage);
-    }
+    // // If the receiver is online, emit the message to their socket
+    // if (receiverSocketId) {
+    //   // Use the `io` instance from ChatGateway to emit the message
+    //   const io = this.chatGateway['connectedClients'].get(receiverSocketId);
+
+    //   io?.emit('newMessage', newMessage);
+    //   console.log('🚀  io:', io);
+    // }
 
     return newMessage;
   }
