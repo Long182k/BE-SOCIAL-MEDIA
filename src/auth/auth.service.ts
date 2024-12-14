@@ -47,6 +47,7 @@ export class AuthService {
       refreshToken,
       userId: user.id,
       userName: user.userName,
+      avatarUrl: user.avatarUrl,
     };
   }
 

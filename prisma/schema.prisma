@@ -89,11 +89,12 @@ model Comment {
 }
 
 model Like {
-  id     String @id @default(uuid())
-  userId String
-  postId String
-  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
   @@index([postId], map: "likes_postId_fkey")
@@ -178,7 +179,7 @@ model ChatMessage {
 
 model ChatAttachment {
   id        String             @id @default(cuid())
-  type      ChatAttachmentType @default(IMAGE)
+  type      ChatAttachmentType @default(image)
   url       String
   messageId String
   message   ChatMessage        @relation(fields: [messageId], references: [id], onDelete: Cascade)
@@ -194,8 +195,8 @@ enum NotificationType {
 }
 
 enum MediaType {
-  IMAGE
-  VIDEO
+  image
+  video
 }
 
 enum Role {
@@ -209,6 +210,6 @@ enum ChatRoomType {
 }
 
 enum ChatAttachmentType {
-  IMAGE
-  VIDEO
+  image
+  video
 }

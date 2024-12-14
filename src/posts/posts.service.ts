@@ -1,189 +1,176 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
+import { CreatePostDto, UpdatePostDto } from './dto/post.dto';
+import { PaginationDto } from 'src/common/pagination.dto';
+import { CloudinaryService } from 'src/file/file.service';
+import { AttachmentsUploadedType } from 'src/file/file.type';
 
 @Injectable()
 export class PostsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
-  // CREATE a new post
-  async create(createPostDto: CreatePostDto) {
-    const { content, userId } = createPostDto;
+  async create(
+    userId: string,
+    createPostDto: CreatePostDto,
+    files: Express.Multer.File[],
+  ) {
 
-    const result = await this.prisma.post.create({
+    const { content, attachments } = createPostDto;
+    let attachmentsUploaded: AttachmentsUploadedType[];
+
+    if (files && files.length > 0) {
+      const uploadedFiles =
+        await this.cloudinaryService.uploadMultipleFiles(files);
+
+      attachmentsUploaded = uploadedFiles.map((file) => ({
+        type: file.type as 'image' | 'video',
+        url: file.url,
+      }));
+    }
+
+    return this.prisma.post.create({
       data: {
         content,
         userId,
-        // attachments: attachments
-        //   ? {
-        //       connect: attachments.map((id) => ({ id })),
-        //     }
-        //   : undefined,
+        attachments: {
+          create: attachmentsUploaded ? attachmentsUploaded : attachments,
+        },
       },
       include: {
         user: true,
-        bookmarks: true,
-        comments: true,
-        likes: true,
-        linkedNotifications: true,
         attachments: true,
-      },
-    });
-
-    return result;
-  }
-
-  // READ all posts
-  async findAll() {
-    return await this.prisma.post.findMany({
-      include: {
-        user: true,
-        bookmarks: true,
-        comments: true,
-        likes: true,
-        linkedNotifications: true,
-        attachments: true,
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+            bookmarks: true,
+          },
+        },
       },
     });
   }
 
-  // READ a single post by ID
+  async findAll(paginationDto: PaginationDto) {
+    const { page, limit, search } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const [posts, total] = await Promise.all([
+      this.prisma.post.findMany({
+        skip,
+        take: limit,
+        where: {
+          content: {
+            contains: search,
+          },
+        },
+        include: {
+          user: true,
+          comments: {
+            include: {
+              user: true,
+            },
+          },
+          attachments: true,
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+              bookmarks: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.post.count({
+        where: {
+          content: {
+            contains: search,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: posts,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async findOne(id: string) {
     const post = await this.prisma.post.findUnique({
       where: { id },
       include: {
         user: true,
-        bookmarks: true,
-        comments: true,
-        likes: true,
-        linkedNotifications: true,
         attachments: true,
+        comments: {
+          include: {
+            user: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+            bookmarks: true,
+          },
+        },
       },
     });
 
-    if (!post) {
-      throw new NotFoundException(`Post with ID ${id} not found`);
-    }
-
+    if (!post) throw new NotFoundException('Post not found');
     return post;
   }
 
-  // UPDATE a post by ID
-  async update(id: string, updatePostDto: UpdatePostDto) {
-    const { content } = updatePostDto;
-
-    // Check if post exists
-    const postExists = await this.prisma.post.findUnique({ where: { id } });
-    if (!postExists) {
-      throw new NotFoundException(`Post with ID ${id} not found`);
-    }
-
-    return await this.prisma.post.update({
-      where: { id },
-      data: {
-        content,
-        // attachments: attachments
-        //   ? {
-        //       set: attachments.map((id) => ({ id })),
-        //     }
-        //   : undefined,
-      },
-      include: {
-        user: true,
-        bookmarks: true,
-        comments: true,
-        likes: true,
-        linkedNotifications: true,
-        attachments: true,
-      },
-    });
-  }
-
-  // DELETE a post by ID
-  async remove(id: string) {
-    // Check if post exists
-    const postExists = await this.prisma.post.findUnique({ where: { id } });
-    if (!postExists) {
-      throw new NotFoundException(`Post with ID ${id} not found`);
-    }
-
-    return await this.prisma.post.delete({
-      where: { id },
-    });
-  }
-
-  async createPost(userId: string, content: string) {
-    return this.prisma.post.create({
-      data: {
-        content,
-        userId,
-      },
-      include: {
-        user: true,
-        likes: true,
-        comments: true,
-        attachments: true,
-      },
-    });
-  }
-
-  async getPosts(userId: string, page = 1, limit = 10) {
-    const skip = (page - 1) * limit;
-
-    return this.prisma.post.findMany({
-      skip,
-      take: limit,
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        user: true,
-        likes: true,
-        comments: true,
-        attachments: true,
-      },
-    });
-  }
-
-  async likePost(userId: string, postId: string) {
-    return this.prisma.like.create({
-      data: {
-        userId,
-        postId,
-      },
-    });
-  }
-
-  async createComment(userId: string, postId: string, content: string) {
-    const comment = await this.prisma.comment.create({
-      data: {
-        content,
-        userId,
-        postId,
-      },
-      include: {
-        user: true,
-      },
-    });
-
-    // Create notification for post owner
+  async update(id: string, userId: string, updatePostDto: UpdatePostDto) {
     const post = await this.prisma.post.findUnique({
-      where: { id: postId },
-      select: { userId: true },
+      where: { id },
     });
 
-    if (post && post.userId !== userId) {
-      await this.prisma.notification.create({
-        data: {
-          type: 'COMMENT',
-          recipientId: post.userId,
-          issuerId: userId,
-          postId,
-        },
-      });
-    }
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.userId !== userId) throw new ForbiddenException('Access denied');
 
-    return comment;
+    return this.prisma.post.update({
+      where: { id },
+      data: {
+        content: updatePostDto.content,
+        attachments: {
+          deleteMany: {},
+          create: updatePostDto.attachments,
+        },
+      },
+      include: {
+        user: true,
+        attachments: true,
+      },
+    });
+  }
+
+  async remove(id: string, userId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id },
+    });
+
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.userId !== userId) throw new ForbiddenException('Access denied');
+
+    await this.prisma.post.delete({
+      where: { id },
+    });
+
+    return { message: 'Post deleted successfully' };
   }
 }
