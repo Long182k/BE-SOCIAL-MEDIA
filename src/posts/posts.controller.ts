@@ -1,77 +1,96 @@
 import {
-  Body,
   Controller,
-  Delete,
   Get,
-  Param,
-  Patch,
   Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
   Query,
+  UseGuards,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
-import { Roles } from 'src/auth/@decorator/roles.decorator';
-import { ROLE } from 'src/auth/util/@enum/role.enum';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
 import { PostsService } from './posts.service';
+import { InteractionsService } from './interactions.service';
+import { CurrentUser } from 'src/auth/@decorator/current-user.decorator';
+import { PaginationDto } from 'src/common/pagination.dto';
+import { CreateCommentDto, CreatePostDto, UpdatePostDto } from './dto/post.dto';
+import { JwtAuthGuard } from 'src/auth/@guard/jwt-auth.guard';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('posts')
+@UseGuards(JwtAuthGuard)
 export class PostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(
+    private readonly postsService: PostsService,
+    private readonly interactionsService: InteractionsService,
+  ) {}
 
-  @Roles(ROLE.ADMIN, ROLE.USER)
   @Post()
-  create(@Body() createPostDto: CreatePostDto) {
-    return this.postsService.create(createPostDto);
+  @UseInterceptors(FilesInterceptor('files', 5))
+  create(
+    @CurrentUser('userId') userId: string,
+    @Body() createPostDto: CreatePostDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.postsService.create(userId, createPostDto, files);
   }
 
   @Get()
-  findAll() {
-    return this.postsService.findAll();
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.postsService.findAll(paginationDto);
   }
 
-  @Get(':id')
+  @Get('single/:id')
   findOne(@Param('id') id: string) {
     return this.postsService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
-    return this.postsService.update(id, updatePostDto);
+  update(
+    @Param('id') id: string,
+    @CurrentUser('userId') userId: string,
+    @Body() updatePostDto: UpdatePostDto,
+  ) {
+    return this.postsService.update(id, userId, updatePostDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.postsService.remove(id);
+  remove(@Param('id') id: string, @CurrentUser('userId') userId: string) {
+    return this.postsService.remove(id, userId);
   }
 
-  @Post('posts/:userId')
-  createPost(
-    @Param('userId') userId: string,
-    @Body('content') content: string,
+  @Post(':id/like')
+  toggleLike(
+    @Param('id') postId: string,
+    @CurrentUser('userId') userId: string,
   ) {
-    return this.postsService.createPost(userId, content);
+    return this.interactionsService.toggleLike(postId, userId);
   }
 
-  @Get('posts/:userId')
-  getPosts(
-    @Param('userId') userId: string,
-    @Query('page') page: number,
-    @Query('limit') limit: number,
-  ) {
-    return this.postsService.getPosts(userId, page, limit);
-  }
-
-  @Post('posts/:postId/:userId/like')
-  likePost(@Param('userId') userId: string, @Param('postId') postId: string) {
-    return this.postsService.likePost(userId, postId);
-  }
-
-  @Post('posts/:postId/:userId/comments')
+  @Post(':id/comment')
   createComment(
-    @Param('userId') userId: string,
-    @Param('postId') postId: string,
-    @Body('content') content: string,
+    @Param('id') id: string,
+    @CurrentUser('userId') userId: string,
+    @Body() createCommentDto: CreateCommentDto,
   ) {
-    return this.postsService.createComment(userId, postId, content);
+    return this.interactionsService.createComment(id, userId, createCommentDto);
+  }
+
+  @Post(':id/bookmark')
+  toggleBookmark(
+    @Param('id') postId: string,
+    @CurrentUser('userId') userId: string,
+  ) {
+    return this.interactionsService.toggleBookmark(postId, userId);
+  }
+
+  @Get('bookmarks')
+  getBookmarks(
+    @CurrentUser('userId') userId: string,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return this.interactionsService.getBookmarks(userId, paginationDto);
   }
 }

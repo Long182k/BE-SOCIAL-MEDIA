@@ -13,6 +13,9 @@ import { RolesGuard } from './auth/@guard/roles.guard';
 import { PostsModule } from './posts/posts.module';
 import { FileModule } from './file/file.module';
 import { SocketModule } from './socket/chat.module';
+import { LikeModule } from './like/like.module';
+import { CommentModule } from './comment/comment.module';
+import { BookmarkModule } from './bookmark/bookmark.module';
 
 @Module({
   imports: [
@@ -24,6 +27,9 @@ import { SocketModule } from './socket/chat.module';
     PostsModule,
     FileModule,
     SocketModule,
+    LikeModule,
+    CommentModule,
+    BookmarkModule,
   ],
   controllers: [UsersController],
   providers: [

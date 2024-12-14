@@ -9,6 +9,8 @@ import refresh_tokenJwtConfig from 'src/auth/@config/refresh_token-jwt.config';
 import { AuthService } from 'src/auth/auth.service';
 import { UsersService } from 'src/users/users.service';
 import { UserRepository } from 'src/users/users.repository';
+import { InteractionsService } from './interactions.service';
+import { CloudinaryService } from 'src/file/file.service';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { UserRepository } from 'src/users/users.repository';
     PrismaService,
     AuthService,
     JwtService,
+    CloudinaryService,
+    InteractionsService,
     UsersService,
     UserRepository,
   ],

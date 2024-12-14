@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import {
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -6,10 +7,9 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ChatRoomService } from './chat-room.service';
 import { Public } from 'src/auth/@decorator/public';
-import { Logger } from '@nestjs/common';
-import { ChatRoomType } from './dto/chat.dto';
+import { ChatMessageService } from './chat-message.service';
+import { ChatRoomService } from './chat-room.service';
 
 @Public()
 @WebSocketGateway({
@@ -22,7 +22,10 @@ import { ChatRoomType } from './dto/chat.dto';
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   private logger: Logger = new Logger('MessageGateway');
-  constructor(private readonly chatRoomService: ChatRoomService) {}
+  constructor(
+    private chatRoomService: ChatRoomService,
+    private chatMessageService: ChatMessageService,
+  ) {}
 
   // Map for managing user socket connections
   private userSocketMap: Record<string, string> = {}; // {userId: socketId}
@@ -99,20 +102,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { chatRoomId, senderId, content, receiverId, type } = payload;
 
     // Get the chat room and notify all participants except the sender
-    const chatRoom = await this.chatRoomService.getChatRoom(senderId);
+    // const chatRoom = await this.chatRoomService.getChatRoom(senderId);
+
+    // const newMessage = await this.chatMessageService.createMessage(payload);
+    // console.log('🚀  newMessage:', newMessage);
 
     const receiverSocketId = this.userSocketMap[receiverId];
     console.log('🚀  receiverSocketId:', receiverSocketId);
-
-    // emit.to(receiverSocketId).emit('newMessage', {
-    //   chatRoomId,
-    //   senderId,
-    //   content,
-    //   receiverId,
-    // });
-
-    const message = await this.chatRoomService.createDirectChat(payload);
-    console.log('🚀  message:', message);
 
     this.server.to(receiverSocketId).emit('newMessage', payload, (ack) => {
       if (ack) {

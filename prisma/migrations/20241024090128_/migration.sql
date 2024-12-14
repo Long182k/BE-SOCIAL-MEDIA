@@ -43,7 +43,7 @@ CREATE TABLE `posts` (
 CREATE TABLE `post_media` (
     `id` VARCHAR(191) NOT NULL,
     `postId` VARCHAR(191) NULL,
-    `type` ENUM('IMAGE', 'VIDEO') NOT NULL,
+    `type` ENUM('image', 'video') NOT NULL,
     `url` VARCHAR(191) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
