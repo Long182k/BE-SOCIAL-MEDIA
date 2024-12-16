@@ -1,26 +1,108 @@
-import { Injectable } from '@nestjs/common';
-import { CreateBookmarkDto } from './dto/create-bookmark.dto';
-import { UpdateBookmarkDto } from './dto/update-bookmark.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PaginationDto } from 'src/common/pagination.dto';
+import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
 export class BookmarkService {
-  create(createBookmarkDto: CreateBookmarkDto) {
-    return 'This action adds a new bookmark';
+  constructor(private prisma: PrismaService) {}
+
+  async toggleBookmark(postId: string, userId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+    });
+
+    if (!post) throw new NotFoundException('Post not found');
+
+    const existingBookmark = await this.prisma.bookmark.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+    });
+
+    if (existingBookmark) {
+      await this.prisma.bookmark.delete({
+        where: {
+          userId_postId: {
+            userId,
+            postId,
+          },
+        },
+      });
+
+      return { bookmarked: false };
+    }
+
+    await this.prisma.bookmark.create({
+      data: {
+        userId,
+        postId,
+      },
+    });
+
+    return { bookmarked: true };
   }
 
-  findAll() {
-    return `This action returns all bookmark`;
+  async getBookmarks(userId: string) {
+    const [bookmarks, total] = await Promise.all([
+      this.prisma.bookmark.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          post: {
+            include: {
+              user: true,
+              attachments: true,
+              _count: {
+                select: {
+                  likes: true,
+                  comments: true,
+                  bookmarks: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+
+      this.prisma.bookmark.count({
+        where: {
+          userId,
+        },
+      }),
+    ]);
+
+    return {
+      data: bookmarks,
+      meta: {
+        total,
+      },
+    };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} bookmark`;
-  }
+  async remove(id: string) {
+    const existingBookmark = await this.prisma.bookmark.findUnique({
+      where: {
+        id,
+      },
+    });
 
-  update(id: number, updateBookmarkDto: UpdateBookmarkDto) {
-    return `This action updates a #${id} bookmark`;
-  }
+    if (!existingBookmark) throw new NotFoundException('Bookmark not found');
 
-  remove(id: number) {
-    return `This action removes a #${id} bookmark`;
+    await this.prisma.bookmark.delete({
+      where: {
+        id,
+      },
+    });
+
+    return {
+      message: 'Bookmark deleted successfully',
+    };
   }
 }

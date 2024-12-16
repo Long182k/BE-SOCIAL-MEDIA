@@ -77,20 +77,4 @@ export class PostsController {
   ) {
     return this.interactionsService.createComment(id, userId, createCommentDto);
   }
-
-  @Post(':id/bookmark')
-  toggleBookmark(
-    @Param('id') postId: string,
-    @CurrentUser('userId') userId: string,
-  ) {
-    return this.interactionsService.toggleBookmark(postId, userId);
-  }
-
-  @Get('bookmarks')
-  getBookmarks(
-    @CurrentUser('userId') userId: string,
-    @Query() paginationDto: PaginationDto,
-  ) {
-    return this.interactionsService.getBookmarks(userId, paginationDto);
-  }
 }
