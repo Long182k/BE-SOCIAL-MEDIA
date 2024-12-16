@@ -1,34 +1,30 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
+import { CurrentUser } from 'src/auth/@decorator/current-user.decorator';
+import { PaginationDto } from '../common/pagination.dto';
 import { BookmarkService } from './bookmark.service';
-import { CreateBookmarkDto } from './dto/create-bookmark.dto';
-import { UpdateBookmarkDto } from './dto/update-bookmark.dto';
 
 @Controller('bookmark')
 export class BookmarkController {
   constructor(private readonly bookmarkService: BookmarkService) {}
 
-  @Post()
-  create(@Body() createBookmarkDto: CreateBookmarkDto) {
-    return this.bookmarkService.create(createBookmarkDto);
+  @Post(':id')
+  toggleBookmark(
+    @Param('id') postId: string,
+    @CurrentUser('userId') userId: string,
+  ) {
+    return this.bookmarkService.toggleBookmark(postId, userId);
   }
 
-  @Get()
-  findAll() {
-    return this.bookmarkService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.bookmarkService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateBookmarkDto: UpdateBookmarkDto) {
-    return this.bookmarkService.update(+id, updateBookmarkDto);
+  @Get('')
+  getBookmarks(
+    @CurrentUser('userId') userId: string,
+  ) {
+    return this.bookmarkService.getBookmarks(userId);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.bookmarkService.remove(+id);
+    console.log('id remove',id)
+    return this.bookmarkService.remove(id);
   }
 }

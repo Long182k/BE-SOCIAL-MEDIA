@@ -48,7 +48,7 @@ model Follow {
 
 model Post {
   id                  String         @id @default(uuid())
-  content             String
+  content             String         @db.Text
   userId              String
   createdAt           DateTime       @default(now())
   bookmarks           Bookmark[]
@@ -76,7 +76,7 @@ model Media {
 
 model Comment {
   id        String   @id @default(uuid())
-  content   String
+  content   String   @db.Text
   userId    String
   postId    String
   createdAt DateTime @default(now())
@@ -162,7 +162,7 @@ model ChatParticipant {
 
 model ChatMessage {
   id          String           @id @default(cuid())
-  content     String
+  content     String           @db.Text
   type        String           @default("MESSAGE")
   senderId    String
   receiverId  String
