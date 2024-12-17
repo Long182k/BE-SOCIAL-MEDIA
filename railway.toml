@@ -1,0 +1,8 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "pnpm run start:prod"
+healthcheckPath = "/health"
+healthcheckTimeout = 100 
