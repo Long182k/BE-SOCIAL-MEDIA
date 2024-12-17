@@ -16,6 +16,7 @@ import { SocketModule } from './socket/chat.module';
 import { LikeModule } from './like/like.module';
 import { CommentModule } from './comment/comment.module';
 import { BookmarkModule } from './bookmark/bookmark.module';
+import { GroupModule } from './group/group.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { BookmarkModule } from './bookmark/bookmark.module';
     LikeModule,
     CommentModule,
     BookmarkModule,
+    GroupModule,
   ],
   controllers: [UsersController],
   providers: [

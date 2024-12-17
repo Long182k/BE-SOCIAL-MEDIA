@@ -30,8 +30,40 @@ model User {
   ChatParticipant       ChatParticipant[]
   ChatMessage           ChatMessage[]
   ChatRoom              ChatRoom[]
+  createdGroups         Group[]           @relation("CreatedGroups")
+  groupMemberships      GroupMember[]
 
   @@map("users")
+}
+
+model Group {
+  id          String        @id @default(uuid())
+  name        String
+  description String?       @db.Text
+  groupAvatar String?
+  creatorId   String
+  createdAt   DateTime      @default(now())
+  creator     User          @relation("CreatedGroups", fields: [creatorId], references: [id], onDelete: Cascade)
+  members     GroupMember[]
+  posts       Post[]
+
+  @@index([creatorId])
+  @@map("groups")
+}
+
+model GroupMember {
+  id       String    @id @default(uuid())
+  groupId  String
+  userId   String?
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
+  group    Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@index([groupId])
+  @@index([userId])
+  @@map("group_members")
 }
 
 model Follow {
@@ -50,6 +82,7 @@ model Post {
   id                  String         @id @default(uuid())
   content             String         @db.Text
   userId              String
+  groupId             String?
   createdAt           DateTime       @default(now())
   bookmarks           Bookmark[]
   comments            Comment[]
@@ -57,8 +90,10 @@ model Post {
   linkedNotifications Notification[]
   attachments         Media[]
   user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group               Group?         @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "posts_userId_fkey")
+  @@index([groupId])
   @@map("posts")
 }
 
@@ -212,4 +247,10 @@ enum ChatRoomType {
 enum ChatAttachmentType {
   image
   video
+}
+
+enum GroupRole {
+  ADMIN
+  PENDING
+  MEMBER
 }
