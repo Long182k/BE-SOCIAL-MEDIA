@@ -18,12 +18,6 @@ async function bootstrap() {
       },
     }),
   );
-
-  // Add a health check endpoint
-  app.get('/health', (req, res) => {
-    res.status(200).send('OK');
-  });
-
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

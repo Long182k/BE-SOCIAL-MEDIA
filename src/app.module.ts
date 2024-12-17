@@ -17,6 +17,7 @@ import { LikeModule } from './like/like.module';
 import { CommentModule } from './comment/comment.module';
 import { BookmarkModule } from './bookmark/bookmark.module';
 import { GroupModule } from './group/group.module';
+import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
@@ -33,7 +34,7 @@ import { GroupModule } from './group/group.module';
     BookmarkModule,
     GroupModule,
   ],
-  controllers: [UsersController],
+  controllers: [UsersController, HealthController],
   providers: [
     PrismaService,
     {
