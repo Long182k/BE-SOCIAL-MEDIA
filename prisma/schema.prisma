@@ -32,6 +32,8 @@ model User {
   ChatRoom              ChatRoom[]
   createdGroups         Group[]           @relation("CreatedGroups")
   groupMemberships      GroupMember[]
+  createdEvents         Event[]           @relation("CreatedEvents")
+  eventAttendee         EventAttendee[]
 
   @@map("users")
 }
@@ -223,6 +225,39 @@ model ChatAttachment {
   @@index([messageId])
 }
 
+model Event {
+  id          String          @id @default(uuid())
+  name        String
+  description String          @db.Text
+  eventAvatar String?
+  eventDate   DateTime
+  creatorId   String
+  category    EventCategory   @default(OTHER)
+  address     String?         @db.Text
+  createdAt   DateTime        @default(now())
+  creator     User            @relation("CreatedEvents", fields: [creatorId], references: [id], onDelete: Cascade)
+  attendees   EventAttendee[]
+
+  @@index([creatorId])
+  @@map("events")
+}
+
+model EventAttendee {
+  id        String         @id @default(uuid())
+  eventId   String
+  userId    String
+  role      AttendeeRole   @default(PENDING_ATTENDEE)
+  status    AttendeeStatus @default(ENROLL)
+  createdAt DateTime       @default(now())
+  event     Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_attendees")
+}
+
 enum NotificationType {
   LIKE
   FOLLOW
@@ -253,4 +288,27 @@ enum GroupRole {
   ADMIN
   PENDING
   MEMBER
+}
+
+enum AttendeeRole {
+  ADMIN
+  ATTENDEE
+  PENDING_ATTENDEE
+}
+
+enum AttendeeStatus {
+  ENROLL
+  CANCEL
+}
+
+enum EventCategory {
+  MUSIC
+  SPORTS
+  EDUCATION
+  TECHNOLOGY
+  FOOD
+  ART
+  BUSINESS
+  HEALTH
+  OTHER
 }

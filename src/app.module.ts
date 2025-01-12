@@ -17,6 +17,7 @@ import { LikeModule } from './like/like.module';
 import { CommentModule } from './comment/comment.module';
 import { BookmarkModule } from './bookmark/bookmark.module';
 import { GroupModule } from './group/group.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { GroupModule } from './group/group.module';
     CommentModule,
     BookmarkModule,
     GroupModule,
+    EventsModule,
   ],
   controllers: [UsersController],
   providers: [
