@@ -118,11 +118,47 @@ export class EventsService {
             avatarUrl: true,
           },
         },
+        attendees: {
+          select: {
+            userId: true,
+            role: true,
+            status: true,
+            user: {
+              select: {
+                userName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
       },
     });
 
     if (!event) throw new NotFoundException('Event not found');
-    return event;
+
+    return {
+      id: event.id,
+      name: event.name,
+      description: event.description,
+      eventAvatar: event.eventAvatar,
+      eventDate: event.eventDate,
+      category: event.category,
+      address: event.address,
+      createdAt: event.createdAt,
+      creator: event.creator,
+      attendees: event.attendees.map((attendee) => ({
+        userId: attendee.userId,
+        role: attendee.role,
+        status: attendee.status,
+        userName: attendee.user.userName,
+        avatarUrl: attendee.user.avatarUrl,
+      })),
+      attendeesCount: event.attendees.filter(
+        (attendee) =>
+          (attendee.role === 'ADMIN' || attendee.role === 'ATTENDEE') &&
+          attendee.status === 'ENROLL',
+      ).length,
+    };
   }
 
   async getAttendees(id: string) {
@@ -254,29 +290,57 @@ export class EventsService {
     });
   }
 
-  async cancelAttendance(id: string, userId: string) {
-    const attendee = await this.prisma.eventAttendee.findUnique({
-      where: {
-        userId_eventId: {
-          userId,
-          eventId: id,
-        },
-      },
-    });
+  async cancelAttendance(
+    id: string,
+    cancelledUserId: string | undefined,
+    userId: string,
+  ) {
+    if (cancelledUserId) {
+      const event = await this.prisma.event.findUnique({
+        where: { id },
+        include: { attendees: true },
+      });
 
-    if (!attendee) throw new NotFoundException('Attendee not found');
+      if (!event) throw new NotFoundException('Event not found');
 
-    return this.prisma.eventAttendee.update({
-      where: {
-        userId_eventId: {
-          userId,
-          eventId: id,
+      const isAdmin = event.attendees.some(
+        (a) => a.userId === userId && a.role === AttendeeRole.ADMIN,
+      );
+
+      if (!isAdmin) {
+        throw new ForbiddenException('Only admins can cancel other attendees');
+      }
+
+      // return this.prisma.eventAttendee.update({
+      //   where: {
+      //     userId_eventId: {
+      //       userId: cancelledUserId,
+      //       eventId: id,
+      //     },
+      //   },
+      //   data: {
+      //     status: AttendeeStatus.CANCEL,
+      //   },
+      // });
+
+      return this.prisma.eventAttendee.delete({
+        where: {
+          userId_eventId: {
+            userId: cancelledUserId,
+            eventId: id,
+          },
         },
-      },
-      data: {
-        status: AttendeeStatus.CANCEL,
-      },
-    });
+      });
+    } else {
+      return this.prisma.eventAttendee.delete({
+        where: {
+          userId_eventId: {
+            userId,
+            eventId: id,
+          },
+        },
+      });
+    }
   }
 
   async remove(id: string, userId: string) {
@@ -333,6 +397,7 @@ export class EventsService {
         name: event.name,
         description: event.description,
         eventAvatar: event.eventAvatar,
+        category: event.category,
         eventDate: event.eventDate,
         address: event.address,
         createdAt: event.createdAt,
@@ -422,7 +487,11 @@ export class EventsService {
                 attendees: {
                   some: {
                     userId,
-                    OR: [{ status: AttendeeStatus.ENROLL }],
+                    OR: [
+                      {
+                        status: AttendeeStatus.ENROLL,
+                      },
+                    ],
                   },
                 },
               },
@@ -499,6 +568,98 @@ export class EventsService {
         attendees: event.attendees,
         attendeesCount: event._count.attendees,
         activeAttendeesCount: event.attendees.filter(
+          (attendee) =>
+            (attendee.role === AttendeeRole.ADMIN ||
+              attendee.role === AttendeeRole.ATTENDEE) &&
+            attendee.status === AttendeeStatus.ENROLL,
+        ).length,
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findMyEvents(userId: string, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    const [events, total] = await Promise.all([
+      this.prisma.event.findMany({
+        where: {
+          OR: [
+            {
+              creatorId: userId,
+            },
+            {
+              attendees: {
+                some: {
+                  userId,
+                  status: AttendeeStatus.ENROLL,
+                  // role: AttendeeRole.ATTENDEE || AttendeeRole.ADMIN,
+                },
+              },
+            },
+          ],
+        },
+        skip,
+        take: limit,
+        include: {
+          _count: {
+            select: { attendees: true },
+          },
+          creator: {
+            select: {
+              id: true,
+              userName: true,
+              avatarUrl: true,
+            },
+          },
+          attendees: {
+            select: {
+              userId: true,
+              role: true,
+              status: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.event.count({
+        where: {
+          OR: [
+            {
+              creatorId: userId,
+            },
+            {
+              attendees: {
+                some: {
+                  userId,
+                  status: AttendeeStatus.ENROLL,
+                },
+              },
+            },
+          ],
+        },
+      }),
+    ]);
+
+    return {
+      events: events.map((event) => ({
+        id: event.id,
+        name: event.name,
+        description: event.description,
+        eventAvatar: event.eventAvatar,
+        eventDate: event.eventDate,
+        category: event.category,
+        address: event.address,
+        createdAt: event.createdAt,
+        creator: event.creator,
+        attendees: event.attendees,
+        attendeesCount: event.attendees.filter(
           (attendee) =>
             (attendee.role === AttendeeRole.ADMIN ||
               attendee.role === AttendeeRole.ATTENDEE) &&

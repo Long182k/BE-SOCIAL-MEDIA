@@ -89,12 +89,14 @@ export class EventsController {
     return this.eventsService.approveRequest(id, userId, adminUserId);
   }
 
-  @Post(':id/cancel')
+  @Post(':id/cancel/:cancelledUserId')
   cancelAttendance(
     @Param('id') id: string,
+    @Param('cancelledUserId') cancelledUserId: string,
     @CurrentUser('userId') userId: string,
   ) {
-    return this.eventsService.cancelAttendance(id, userId);
+    // userID is executer, cancelledUserId is the user who is cancelled
+    return this.eventsService.cancelAttendance(id, cancelledUserId, userId);
   }
 
   @Delete(':id')
@@ -117,13 +119,21 @@ export class EventsController {
     return this.eventsService.getEventsByCategory(category, +page, +limit);
   }
 
-  @Get('discover/all')
+  @Get('/all/discover')
   findDiscoveryEvents(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
     @CurrentUser('userId') userId: string,
   ) {
     return this.eventsService.findDiscoveryEvents(userId, +page, +limit);
-    return 'hi';
+  }
+
+  @Get('/all/my-events')
+  findMyEvents(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+    @CurrentUser('userId') userId: string,
+  ) {
+    return this.eventsService.findMyEvents(userId, +page, +limit);
   }
 }
