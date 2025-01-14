@@ -257,7 +257,7 @@ export class EventsService {
         eventId: id,
         userId,
         role: AttendeeRole.PENDING_ATTENDEE,
-        status: AttendeeStatus.ENROLL,
+        status: AttendeeStatus.PENDING,
       },
     });
   }
@@ -286,6 +286,7 @@ export class EventsService {
       },
       data: {
         role: AttendeeRole.ATTENDEE,
+        status: AttendeeStatus.ENROLL,
       },
     });
   }
@@ -303,13 +304,13 @@ export class EventsService {
 
       if (!event) throw new NotFoundException('Event not found');
 
-      const isAdmin = event.attendees.some(
-        (a) => a.userId === userId && a.role === AttendeeRole.ADMIN,
-      );
+      // const isAdmin = event.attendees.some(
+      //   (a) => a.userId === userId && a.role === AttendeeRole.ADMIN,
+      // );
 
-      if (!isAdmin) {
-        throw new ForbiddenException('Only admins can cancel other attendees');
-      }
+      // if (!isAdmin) {
+      //   throw new ForbiddenException('Only admins can cancel other attendees');
+      // }
 
       // return this.prisma.eventAttendee.update({
       //   where: {
@@ -412,12 +413,36 @@ export class EventsService {
     category: EventCategory,
     page: number,
     limit: number,
+    userId: string,
   ) {
     const skip = (page - 1) * limit;
     const [events, total] = await Promise.all([
       this.prisma.event.findMany({
         where: {
-          category,
+          AND: [
+            {
+              category,
+            },
+            {
+              NOT: {
+                attendees: {
+                  some: {
+                    userId,
+                    OR: [
+                      {
+                        status: AttendeeStatus.ENROLL,
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              creatorId: {
+                not: userId,
+              },
+            },
+          ],
         },
         skip,
         take: limit,
@@ -490,6 +515,7 @@ export class EventsService {
                     OR: [
                       {
                         status: AttendeeStatus.ENROLL,
+                        role: AttendeeRole.ATTENDEE,
                       },
                     ],
                   },

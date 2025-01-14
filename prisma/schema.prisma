@@ -298,6 +298,7 @@ enum AttendeeRole {
 
 enum AttendeeStatus {
   ENROLL
+  PENDING
   CANCEL
 }
 

@@ -115,8 +115,14 @@ export class EventsController {
     category: EventCategory,
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
+    @CurrentUser('userId') userId: string,
   ) {
-    return this.eventsService.getEventsByCategory(category, +page, +limit);
+    return this.eventsService.getEventsByCategory(
+      category,
+      +page,
+      +limit,
+      userId,
+    );
   }
 
   @Get('/all/discover')
