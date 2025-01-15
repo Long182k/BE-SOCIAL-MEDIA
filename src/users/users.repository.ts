@@ -60,20 +60,19 @@ export class UserRepository {
     data.coverPageUrl =
       'https://res.cloudinary.com/dcivdqyyj/image/upload/v1736957736/mfbprtxbj5bjj8nkzt7f.jpg';
 
-    const { userName, password, email, avatarUrl, coverPageUrl } = data;
+    const { username, password, email, avatarUrl, coverPageUrl } = data;
 
     const hashedPassword = await argon.hash(password);
 
     const result = await this.prisma.user.create({
       data: {
-        userName,
+        userName: username,
         email,
         hashedPassword,
         avatarUrl: avatarUrl,
         coverPageUrl: coverPageUrl,
       },
     });
-    console.log("🚀  result:", result)
 
     delete result.hashedPassword;
 
