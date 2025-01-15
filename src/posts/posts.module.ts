@@ -11,6 +11,7 @@ import { UsersService } from 'src/users/users.service';
 import { UserRepository } from 'src/users/users.repository';
 import { InteractionsService } from './interactions.service';
 import { CloudinaryService } from 'src/file/file.service';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { CloudinaryService } from 'src/file/file.service';
     InteractionsService,
     UsersService,
     UserRepository,
+    NotificationService,
   ],
 })
 export class PostsModule {}
