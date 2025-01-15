@@ -86,6 +86,7 @@ model Post {
   content     String     @db.Text
   userId      String
   groupId     String?
+  sentiment   String     @default("MODERATE")
   createdAt   DateTime   @default(now())
   bookmarks   Bookmark[]
   comments    Comment[]
@@ -116,6 +117,7 @@ model Comment {
   content   String   @db.Text
   userId    String
   postId    String
+  sentiment String   @default("MODERATE")
   createdAt DateTime @default(now())
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

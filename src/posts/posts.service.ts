@@ -8,12 +8,14 @@ import { CreatePostDto, UpdatePostDto } from './dto/post.dto';
 import { PaginationDto } from 'src/common/pagination.dto';
 import { CloudinaryService } from 'src/file/file.service';
 import { AttachmentsUploadedType } from 'src/file/file.type';
+import { NlpService } from '../nlp/nlp.service';
 
 @Injectable()
 export class PostsService {
   constructor(
     private prisma: PrismaService,
     private readonly cloudinaryService: CloudinaryService,
+    private nlpService: NlpService,
   ) {}
 
   async create(
@@ -23,6 +25,8 @@ export class PostsService {
   ) {
     const { content, attachments } = createPostDto;
     let attachmentsUploaded: AttachmentsUploadedType[];
+
+    const sentiment = await this.nlpService.evaluateContent(content);
 
     if (files && files.length > 0) {
       const uploadedFiles =
@@ -38,6 +42,7 @@ export class PostsService {
       data: {
         content,
         userId,
+        sentiment,
         attachments: {
           create: attachmentsUploaded ? attachmentsUploaded : attachments,
         },
