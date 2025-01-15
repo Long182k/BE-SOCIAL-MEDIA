@@ -15,8 +15,8 @@ export class AuthService {
     private refreshTokenConfig: ConfigType<typeof refreshTokenJwtConfig>,
   ) {}
 
-  async validateUser(userName: string, password: string): Promise<any> {
-    const user = await this.usersService.findOne(userName);
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.usersService.findOne(email);
     const isVerifiedPassword = await argon.verify(
       user.hashedPassword,
       password,
@@ -47,7 +47,9 @@ export class AuthService {
       refreshToken,
       userId: user.id,
       userName: user.userName,
+      email: user.email,
       avatarUrl: user.avatarUrl,
+      coverPageUrl: user.coverPageUrl,
     };
   }
 
@@ -55,6 +57,7 @@ export class AuthService {
     const payload = {
       userId: user.id,
       userName: user.userName,
+      email: user.email,
       role: user.role,
     };
 
@@ -111,7 +114,12 @@ export class AuthService {
       throw new UnauthorizedException('User Not Found');
     }
 
-    return { userId: user.id, userName: user.userName, role: user.role };
+    return {
+      userId: user.id,
+      userName: user.userName,
+      role: user.role,
+      email: user.email,
+    };
   }
 
   async signOut(userId: string) {
@@ -121,5 +129,9 @@ export class AuthService {
     };
 
     return await this.usersService.updateHashedRefreshToken(payloadUpdate);
+  }
+
+  async getUserById(id: string) {
+    return await this.usersService.findUserByKeyword({ id });
   }
 }

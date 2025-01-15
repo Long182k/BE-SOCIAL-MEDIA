@@ -1,7 +1,18 @@
-import { Body, Controller, Delete, Get, Param, Patch } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CurrentUser } from 'src/auth/@decorator/current-user.decorator';
 import { Roles } from 'src/auth/@decorator/roles.decorator';
-import { AuthService } from 'src/auth/auth.service';
 import { ROLE } from 'src/auth/util/@enum/role.enum';
+import { CloudinaryService } from 'src/file/file.service';
 import { GetUserByKeywordDTO } from './dto/get-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
@@ -10,7 +21,7 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(
     private usersService: UsersService,
-    private authService: AuthService,
+    private cloudinaryService: CloudinaryService,
   ) {}
 
   @Get()
@@ -29,9 +40,32 @@ export class UsersController {
     return await this.usersService.findUserByKeyword(keyword);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  @Patch('/edit-profile')
+  async editProfile(
+    @CurrentUser('userId') userId: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return await this.usersService.editProfile({ ...updateUserDto }, userId);
+  }
+
+  @Patch('change/avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  async updateAvatar(
+    @CurrentUser('userId') userId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const uploadedFile = await this.cloudinaryService.uploadFile(file);
+    return await this.usersService.updateAvatar(userId, uploadedFile.url);
+  }
+
+  @Patch('change/cover-page')
+  @UseInterceptors(FileInterceptor('file'))
+  async updateCoverPage(
+    @CurrentUser('userId') userId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const uploadedFile = await this.cloudinaryService.uploadFile(file);
+    return await this.usersService.updateCoverPage(userId, uploadedFile.url);
   }
 
   @Delete(':id')

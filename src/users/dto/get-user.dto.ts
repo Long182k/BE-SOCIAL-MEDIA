@@ -15,10 +15,6 @@ export class GetUserByKeywordDTO {
 
   @IsString()
   @IsOptional()
-  displayName?: string;
-
-  @IsString()
-  @IsOptional()
   avatarUrl?: string;
 
   @IsString()

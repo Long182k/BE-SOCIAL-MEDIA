@@ -27,16 +27,27 @@ export class UsersService {
     return await this.userRepository.findAllUsers();
   }
 
-  async findOne(userName: string) {
-    return await this.userRepository.findUserByUserName(userName);
+  async findOne(email: string) {
+    return await this.userRepository.findUserByEmail(email);
   }
 
   async findUserByKeyword(keyword: GetUserByKeywordDTO) {
     return await this.userRepository.findUserByKeyword(keyword);
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async editProfile(updateUserDto: UpdateUserDto, userId: string) {
+    return await this.userRepository.update(userId, {
+      ...updateUserDto,
+      dateOfBirth: new Date(updateUserDto.dateOfBirth),
+    });
+  }
+
+  async updateAvatar(id: string, avatarUrl: string) {
+    return await this.userRepository.update(id, { avatarUrl });
+  }
+
+  async updateCoverPage(id: string, coverPageUrl: string) {
+    return await this.userRepository.update(id, { coverPageUrl });
   }
 
   remove(id: number) {

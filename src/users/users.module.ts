@@ -8,12 +8,21 @@ import { PrismaService } from 'src/prisma.service';
 import { UsersController } from './users.controller';
 import { UserRepository } from './users.repository';
 import { UsersService } from './users.service';
+import { CloudinaryService } from 'src/file/file.service';
+import { MulterModule } from '@nestjs/platform-express';
+import { FileModule } from '../file/file.module';
 
 @Module({
   imports: [
     JwtModule.registerAsync(access_tokenJwtConfig.asProvider()),
     ConfigModule.forFeature(access_tokenJwtConfig),
     ConfigModule.forFeature(refresh_tokenJwtConfig),
+    FileModule,
+    MulterModule.register({
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+    }),
   ],
   controllers: [UsersController],
   providers: [
@@ -22,6 +31,7 @@ import { UsersService } from './users.service';
     PrismaService,
     AuthService,
     JwtService,
+    CloudinaryService,
   ],
   exports: [UsersService],
 })
