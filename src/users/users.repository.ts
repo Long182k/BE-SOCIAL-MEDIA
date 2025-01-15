@@ -42,29 +42,26 @@ export class UserRepository {
     }
   }
 
-  async findAllUsers() //   params: {
-  //   skip?: number;
-  //   take?: number;
-  //   cursor?: Prisma.UserWhereUniqueInput;
-  //   where?: Prisma.UserWhereInput;
-  //   orderBy?: Prisma.UserOrderByWithRelationInput;
-  // }
-  : Promise<User[]> {
-    // const { skip, take, cursor, where, orderBy } = params;
-    return this.prisma.user
-      .findMany
-      //   {
-      //   skip,
-      //   take,
-      //   cursor,
-      //   where,
-      //   orderBy,
-      // }
-      ();
+  async findAllUsers(
+    userId: string, //   params: {
+  ): Promise<User[]> {
+    return this.prisma.user.findMany({
+      where: {
+        NOT: {
+          id: userId,
+        },
+      },
+    });
   }
 
   async createUser(data: CreateUserDTO): Promise<User> {
-    const { userName, password, email } = data;
+    data.avatarUrl =
+      'https://res.cloudinary.com/dcivdqyyj/image/upload/v1736957755/sq1svii2veo8hewyelud.jpg';
+    data.coverPageUrl =
+      'https://res.cloudinary.com/dcivdqyyj/image/upload/v1736957736/mfbprtxbj5bjj8nkzt7f.jpg';
+
+    const { userName, password, email, avatarUrl, coverPageUrl } = data;
+
     const hashedPassword = await argon.hash(password);
 
     const result = await this.prisma.user.create({
@@ -72,8 +69,11 @@ export class UserRepository {
         userName,
         email,
         hashedPassword,
+        avatarUrl: avatarUrl,
+        coverPageUrl: coverPageUrl,
       },
     });
+    console.log("🚀  result:", result)
 
     delete result.hashedPassword;
 

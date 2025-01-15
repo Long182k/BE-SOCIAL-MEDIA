@@ -25,8 +25,8 @@ export class UsersController {
   ) {}
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@CurrentUser('userId') userId: string) {
+    return this.usersService.findAll(userId);
   }
 
   @Get('/userName')

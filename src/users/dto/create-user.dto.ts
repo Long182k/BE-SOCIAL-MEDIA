@@ -12,4 +12,10 @@ export class CreateUserDTO {
   @IsEmail()
   @IsNotEmpty()
   email: string;
+
+  @IsOptional()
+  avatarUrl?: string;
+
+  @IsOptional()
+  coverPageUrl?: string;
 }

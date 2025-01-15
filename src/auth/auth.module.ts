@@ -12,6 +12,8 @@ import refreshJwtConfig from './@config/refresh_token-jwt.config';
 
 import 'dotenv/config';
 import { RefreshJwtStrategy } from './@strategies/refresh-jwt.strategy';
+import { UserRepository } from 'src/users/users.repository';
+import { PrismaService } from 'src/prisma.service';
 
 @Module({
   imports: [
@@ -22,7 +24,14 @@ import { RefreshJwtStrategy } from './@strategies/refresh-jwt.strategy';
     ConfigModule.forFeature(refreshJwtConfig),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy, RefreshJwtStrategy],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    RefreshJwtStrategy,
+    UserRepository,
+    PrismaService,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

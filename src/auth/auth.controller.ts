@@ -10,25 +10,21 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { LocalAuthGuard } from 'src/auth/@guard/local-auth.guard';
+import { CreateUserDTO } from 'src/users/dto/create-user.dto';
 import { Public } from './@decorator/public';
+import { JwtAuthGuard } from './@guard/jwt-auth.guard';
 import { RefreshAuthGuard } from './@guard/refresh-auth.guard';
 import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './@guard/jwt-auth.guard';
-import { CreateUserDTO } from 'src/users/dto/create-user.dto';
-import { UsersService } from 'src/users/users.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private authService: AuthService,
-    private usersService: UsersService,
-  ) {}
+  constructor(private authService: AuthService) {}
 
   @HttpCode(HttpStatus.OK)
   @Public()
   @Post('/register')
   create(@Body() createUserDto: CreateUserDTO) {
-    return this.usersService.createUser(createUserDto);
+    return this.authService.createUser(createUserDto);
   }
 
   @HttpCode(HttpStatus.OK)
