@@ -12,11 +12,12 @@ model User {
   userName              String            @unique
   email                 String            @unique
   role                  Role              @default(USER)
-  displayName           String?
   hashedPassword        String
   hashedRefreshToken    String?
   avatarUrl             String?
+  coverPageUrl          String?
   bio                   String?
+  dateOfBirth           DateTime?
   isActive              Boolean           @default(true)
   createdAt             DateTime          @default(now())
   bookmarks             Bookmark[]
