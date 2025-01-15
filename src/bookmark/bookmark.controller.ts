@@ -1,6 +1,5 @@
-import { Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { CurrentUser } from 'src/auth/@decorator/current-user.decorator';
-import { PaginationDto } from '../common/pagination.dto';
 import { BookmarkService } from './bookmark.service';
 
 @Controller('bookmark')

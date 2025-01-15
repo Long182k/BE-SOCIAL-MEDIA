@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PaginationDto } from 'src/common/pagination.dto';
+import { NotificationType } from '@prisma/client';
+import { NotificationService } from 'src/notification/notification.service';
 import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
 export class BookmarkService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationService: NotificationService,
+  ) {}
 
   async toggleBookmark(postId: string, userId: string) {
     const post = await this.prisma.post.findUnique({
@@ -35,12 +39,25 @@ export class BookmarkService {
       return { bookmarked: false };
     }
 
-    await this.prisma.bookmark.create({
+    const result = await this.prisma.bookmark.create({
       data: {
         userId,
         postId,
       },
+      include: {
+        post: true,
+        user: true,
+      },
     });
+
+    if (result) {
+      await this.notificationService.create({
+        content: `${result.user.userName} bookmarked your post`,
+        type: NotificationType.BOOKMARK,
+        senderId: userId,
+        receiverId: post.userId,
+      });
+    }
 
     return { bookmarked: true };
   }

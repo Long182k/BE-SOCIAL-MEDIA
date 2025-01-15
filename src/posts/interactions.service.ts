@@ -2,10 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PaginationDto } from 'src/common/pagination.dto';
 import { PrismaService } from 'src/prisma.service';
 import { CreateCommentDto } from './dto/post.dto';
+import { NotificationType } from '@prisma/client';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class InteractionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationService: NotificationService,
+  ) {}
 
   async toggleLike(postId: string, userId: string) {
     const post = await this.prisma.post.findUnique({
@@ -36,12 +41,25 @@ export class InteractionsService {
       return { liked: false };
     }
 
-    await this.prisma.like.create({
+    const result = await this.prisma.like.create({
       data: {
         userId,
         postId,
       },
+      include: {
+        user: true,
+        post: true,
+      },
     });
+
+    if (result && post.userId !== userId) {
+      await this.notificationService.create({
+        content: `${result.user.userName} liked your post`,
+        type: NotificationType.LIKE,
+        senderId: userId,
+        receiverId: post.userId,
+      });
+    }
 
     return { liked: true };
   }
@@ -59,7 +77,7 @@ export class InteractionsService {
 
     if (!post) throw new NotFoundException('Post not found');
 
-    return this.prisma.comment.create({
+    const result = await this.prisma.comment.create({
       data: {
         content,
         userId,
@@ -69,7 +87,16 @@ export class InteractionsService {
         user: true,
       },
     });
-  }
 
-  
+    if (result && post.userId !== userId) {
+      await this.notificationService.create({
+        content: `${result.user.userName} commented on your post`,
+        type: NotificationType.COMMENT,
+        senderId: userId,
+        receiverId: post.userId,
+      });
+    }
+
+    return result;
+  }
 }
