@@ -12,12 +12,14 @@ import { UserRepository } from 'src/users/users.repository';
 import { InteractionsService } from './interactions.service';
 import { CloudinaryService } from 'src/file/file.service';
 import { NotificationService } from 'src/notification/notification.service';
+import { NlpModule } from '../nlp/nlp.module';
 
 @Module({
   imports: [
     JwtModule.registerAsync(access_tokenJwtConfig.asProvider()),
     ConfigModule.forFeature(access_tokenJwtConfig),
     ConfigModule.forFeature(refresh_tokenJwtConfig),
+    NlpModule,
   ],
   controllers: [PostsController],
   providers: [

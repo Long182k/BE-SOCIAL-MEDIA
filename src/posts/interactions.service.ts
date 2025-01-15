@@ -4,12 +4,14 @@ import { PrismaService } from 'src/prisma.service';
 import { CreateCommentDto } from './dto/post.dto';
 import { NotificationType } from '@prisma/client';
 import { NotificationService } from 'src/notification/notification.service';
+import { NlpService } from '../nlp/nlp.service';
 
 @Injectable()
 export class InteractionsService {
   constructor(
     private prisma: PrismaService,
     private notificationService: NotificationService,
+    private nlpService: NlpService,
   ) {}
 
   async toggleLike(postId: string, userId: string) {
@@ -69,19 +71,21 @@ export class InteractionsService {
     userId: string,
     createCommentDto: CreateCommentDto,
   ) {
-    const { content, imageUrl } = createCommentDto;
-    console.log('🚀  content createComment:', content);
+    const { content } = createCommentDto;
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
     });
 
     if (!post) throw new NotFoundException('Post not found');
 
+    const sentiment = await this.nlpService.evaluateContent(content);
+
     const result = await this.prisma.comment.create({
       data: {
         content,
         userId,
         postId,
+        sentiment,
       },
       include: {
         user: true,
