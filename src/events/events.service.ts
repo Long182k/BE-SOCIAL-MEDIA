@@ -274,8 +274,8 @@ export class EventsService {
       (a) => a.userId === adminUserId && a.role === AttendeeRole.ADMIN,
     );
 
-    if (!isAdmin)
-      throw new ForbiddenException('Only event admins can approve requests');
+    // if (!isAdmin)
+    //   throw new ForbiddenException('Only event admins can approve requests');
 
     return this.prisma.eventAttendee.update({
       where: {
