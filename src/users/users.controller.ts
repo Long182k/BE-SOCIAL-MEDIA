@@ -7,6 +7,7 @@ import {
   Patch,
   UploadedFile,
   UseInterceptors,
+  Post,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from 'src/auth/@decorator/current-user.decorator';
@@ -71,5 +72,21 @@ export class UsersController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(+id);
+  }
+
+  @Post('follow/:userId')
+  async followUser(
+    @CurrentUser('userId') followerId: string,
+    @Param('userId') userId: string,
+  ) {
+    return await this.usersService.followUser(followerId, userId);
+  }
+
+  @Get('follow-status/:userId')
+  async getFollowStatus(
+    @CurrentUser('userId') followerId: string,
+    @Param('userId') userId: string,
+  ) {
+    return await this.usersService.getFollowStatus(followerId, userId);
   }
 }
