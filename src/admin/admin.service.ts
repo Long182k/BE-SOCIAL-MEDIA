@@ -307,4 +307,100 @@ export class AdminService {
       },
     });
   }
+
+  async getGroupManagement(page: number, pageSize: number) {
+    const skip = (page - 1) * pageSize;
+
+    const [groups, total] = await Promise.all([
+      this.prisma.group.findMany({
+        skip,
+        take: pageSize,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          groupAvatar: true,
+          createdAt: true,
+          creator: {
+            select: {
+              userName: true,
+            },
+          },
+          _count: {
+            select: {
+              members: true,
+              posts: true,
+            },
+          },
+        },
+      }),
+      this.prisma.group.count(),
+    ]);
+
+    return {
+      groups,
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  async deleteGroup(groupId: string) {
+    return this.prisma.group.delete({
+      where: { id: groupId },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+  }
+
+  async getEventManagement(page: number, pageSize: number) {
+    const skip = (page - 1) * pageSize;
+
+    const [events, total] = await Promise.all([
+      this.prisma.event.findMany({
+        skip,
+        take: pageSize,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          eventAvatar: true,
+          eventDate: true,
+          category: true,
+          address: true,
+          createdAt: true,
+          creator: {
+            select: {
+              userName: true,
+            },
+          },
+          _count: {
+            select: {
+              attendees: true,
+            },
+          },
+        },
+      }),
+      this.prisma.event.count(),
+    ]);
+
+    return {
+      events,
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  async deleteEvent(eventId: string) {
+    return this.prisma.event.delete({
+      where: { id: eventId },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+  }
 }

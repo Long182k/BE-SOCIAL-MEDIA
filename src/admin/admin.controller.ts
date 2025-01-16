@@ -5,6 +5,7 @@ import {
   Patch,
   Query,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import { Roles } from 'src/auth/@decorator/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/@guard/jwt-auth.guard';
@@ -37,5 +38,37 @@ export class AdminController {
   @Patch('users/:userId/toggle-activity')
   async toggleUserActivity(@Param('userId') userId: string) {
     return this.adminService.toggleUserActivity(userId);
+  }
+
+  @Get('groups')
+  async getGroupManagement(
+    @Query('page') page: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.adminService.getGroupManagement(
+      parseInt(page, 10),
+      parseInt(pageSize, 10),
+    );
+  }
+
+  @Delete('groups/:groupId')
+  async deleteGroup(@Param('groupId') groupId: string) {
+    return this.adminService.deleteGroup(groupId);
+  }
+
+  @Get('events')
+  async getEventManagement(
+    @Query('page') page: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.adminService.getEventManagement(
+      parseInt(page, 10),
+      parseInt(pageSize, 10),
+    );
+  }
+
+  @Delete('events/:eventId')
+  async deleteEvent(@Param('eventId') eventId: string) {
+    return this.adminService.deleteEvent(eventId);
   }
 }
