@@ -56,14 +56,14 @@ model Group {
 }
 
 model GroupMember {
-  id       String      @id @default(uuid())
+  id       String       @id @default(uuid())
   groupId  String
   userId   String?
-  role     GroupRole   @default(MEMBER)
-  status   GroupStatus @default(JOINED)
-  joinedAt DateTime    @default(now())
-  group    Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user     User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     GroupRole    @default(MEMBER)
+  status   GroupStatus? @default(JOINED)
+  joinedAt DateTime     @default(now())
+  group    Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, groupId])
   @@index([groupId])

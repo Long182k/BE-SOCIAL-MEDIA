@@ -52,7 +52,13 @@ export class GroupService {
           },
           _count: {
             select: {
-              members: true,
+              members: {
+                where: {
+                  role: {
+                    in: [GroupRole.ADMIN, GroupRole.MEMBER],
+                  },
+                },
+              },
             },
           },
         },
@@ -98,7 +104,13 @@ export class GroupService {
         },
         _count: {
           select: {
-            members: true,
+            members: {
+              where: {
+                role: {
+                  in: [GroupRole.ADMIN, GroupRole.MEMBER],
+                },
+              },
+            },
           },
         },
       },
@@ -156,6 +168,7 @@ export class GroupService {
     const existingMember = group.members.find(
       (member) => member.userId === userId,
     );
+
     if (existingMember) {
       throw new ForbiddenException('User is already a member of this group');
     }
@@ -165,6 +178,7 @@ export class GroupService {
       data: {
         groupId,
         role: GroupRole.PENDING,
+        userId,
       },
     });
   }
@@ -172,6 +186,7 @@ export class GroupService {
   // Get join requests (for admins)
   async getJoinRequests(userId: string, groupId: string) {
     const isAdmin = await this.isGroupAdmin(userId, groupId);
+
     if (!isAdmin) {
       throw new ForbiddenException('Only admins can view join requests');
     }
@@ -179,15 +194,10 @@ export class GroupService {
     return this.prisma.groupMember.findMany({
       where: {
         groupId,
+        role: GroupRole.PENDING,
       },
       include: {
-        user: {
-          select: {
-            id: true,
-            userName: true,
-            avatarUrl: true,
-          },
-        },
+        user: true,
       },
     });
   }
@@ -211,6 +221,81 @@ export class GroupService {
         userId,
       },
     });
+  }
+
+  // Reject join request
+  async rejectJoinRequest(
+    adminId: string,
+    id: string,
+    userId: string | undefined,
+  ) {
+    console.log('🚀  userId:', userId);
+    console.log('🚀  userId:', typeof userId);
+
+    const group = await this.prisma.group.findUnique({
+      where: { id },
+      include: {
+        members: true,
+      },
+    });
+
+    if (!group) throw new NotFoundException('Group not found');
+
+    if (userId === 'undefined') {
+      console.log('1');
+      // User canceling their own request
+      const memberExists = await this.prisma.groupMember.findUnique({
+        where: {
+          userId_groupId: {
+            userId: adminId,
+            groupId: id,
+          },
+        },
+      });
+
+      if (!memberExists) {
+        throw new NotFoundException('Member not found in this group');
+      }
+
+      return this.prisma.groupMember.delete({
+        where: {
+          userId_groupId: {
+            userId: adminId,
+            groupId: id,
+          },
+        },
+      });
+    } else {
+      console.log('2');
+      // Admin rejecting a user's request
+      const memberExists = await this.prisma.groupMember.findUnique({
+        where: {
+          userId_groupId: {
+            userId,
+            groupId: id,
+          },
+        },
+      });
+
+      if (!memberExists) {
+        throw new NotFoundException('Member not found in this group');
+      }
+
+      // Verify admin permissions
+      const isAdmin = await this.isGroupAdmin(adminId, id);
+      if (!isAdmin) {
+        throw new ForbiddenException('Only admins can reject join requests');
+      }
+
+      return this.prisma.groupMember.delete({
+        where: {
+          userId_groupId: {
+            userId,
+            groupId: id,
+          },
+        },
+      });
+    }
   }
 
   // Helper method to check if user is group admin
@@ -263,8 +348,8 @@ export class GroupService {
           select: {
             members: {
               where: {
-                NOT: {
-                  role: GroupRole.PENDING,
+                role: {
+                  in: [GroupRole.ADMIN, GroupRole.MEMBER],
                 },
               },
             },

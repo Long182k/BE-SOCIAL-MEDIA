@@ -93,10 +93,10 @@ export class EventsController {
   cancelAttendance(
     @Param('id') id: string,
     @Param('cancelledUserId') cancelledUserId: string,
-    @CurrentUser('userId') userId: string,
+    @CurrentUser('userId') adminId: string,
   ) {
     // userID is executer, cancelledUserId is the user who is cancelled
-    return this.eventsService.cancelAttendance(id, cancelledUserId, userId);
+    return this.eventsService.cancelAttendance(id, cancelledUserId, adminId);
   }
 
   @Delete(':id')

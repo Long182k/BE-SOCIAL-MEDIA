@@ -46,7 +46,7 @@ export class GroupController {
     return this.groupService.requestJoinGroup(userId, groupId);
   }
 
-  @Get(':groupId/requests')
+  @Get(':groupId/join-requests')
   getJoinRequests(
     @CurrentUser('userId') userId: string,
     @Param('groupId') groupId: string,
@@ -61,6 +61,15 @@ export class GroupController {
     @Param('userId') userId: string,
   ) {
     return this.groupService.approveJoinRequest(adminId, groupId, userId);
+  }
+
+  @Post(':groupId/reject/:userId')
+  rejectJoinRequest(
+    @CurrentUser('userId') adminId: string,
+    @Param('groupId') groupId: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.groupService.rejectJoinRequest(adminId, groupId, userId);
   }
 
   @Get(':groupId')
