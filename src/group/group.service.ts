@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
-import { GroupRole } from '@prisma/client';
+import { GroupRole, Role } from '@prisma/client';
 import { CloudinaryService } from 'src/file/file.service';
 
 @Injectable()
@@ -185,11 +185,11 @@ export class GroupService {
 
   // Get join requests (for admins)
   async getJoinRequests(userId: string, groupId: string) {
-    const isAdmin = await this.isGroupAdmin(userId, groupId);
+    // const isAdmin = await this.isGroupAdmin(userId, groupId);
 
-    if (!isAdmin) {
-      throw new ForbiddenException('Only admins can view join requests');
-    }
+    // if (!isAdmin) {
+    //   throw new ForbiddenException('Only admins can view join requests');
+    // }
 
     return this.prisma.groupMember.findMany({
       where: {
@@ -204,10 +204,10 @@ export class GroupService {
 
   // Approve join request
   async approveJoinRequest(adminId: string, groupId: string, userId: string) {
-    const isAdmin = await this.isGroupAdmin(adminId, groupId);
-    if (!isAdmin) {
-      throw new ForbiddenException('Only admins can approve join requests');
-    }
+    // const isAdmin = await this.isGroupAdmin(adminId, groupId);
+    // if (!isAdmin) {
+    //   throw new ForbiddenException('Only admins can approve join requests');
+    // }
 
     return this.prisma.groupMember.update({
       where: {
@@ -282,10 +282,10 @@ export class GroupService {
       }
 
       // Verify admin permissions
-      const isAdmin = await this.isGroupAdmin(adminId, id);
-      if (!isAdmin) {
-        throw new ForbiddenException('Only admins can reject join requests');
-      }
+      // const isAdmin = await this.isGroupAdmin(adminId, id);
+      // if (!isAdmin) {
+      //   throw new ForbiddenException('Only admins can reject join requests');
+      // }
 
       return this.prisma.groupMember.delete({
         where: {
@@ -310,9 +310,17 @@ export class GroupService {
           groupId,
         },
       },
+      include: {
+        user: true,
+      },
     });
 
-    return member?.role === GroupRole.ADMIN;
+    // If member doesn't exist in the group, they can't be an admin
+    if (!member) {
+      return false;
+    }
+
+    return member.role === GroupRole.ADMIN || member.user.role === Role.ADMIN;
   }
 
   async getGroupById(userId: string, groupId: string) {
