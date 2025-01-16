@@ -5,12 +5,15 @@ import refreshTokenJwtConfig from './@config/refresh_token-jwt.config'; // Adjus
 import { ConfigType } from '@nestjs/config';
 import * as argon from 'argon2';
 import { UpdateHashedRefreshTokenDTO } from 'src/users/dto/update-user.dto';
+import { CreateUserDTO } from 'src/users/dto/create-user.dto';
+import { UserRepository } from 'src/users/users.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private userRepository: UserRepository,
     @Inject(refreshTokenJwtConfig.KEY)
     private refreshTokenConfig: ConfigType<typeof refreshTokenJwtConfig>,
   ) {}
@@ -50,6 +53,19 @@ export class AuthService {
       email: user.email,
       avatarUrl: user.avatarUrl,
       coverPageUrl: user.coverPageUrl,
+    };
+  }
+
+  async createUser(createUserDto: CreateUserDTO) {
+    const { accessToken, refreshToken } =
+      await this.generateTokens(createUserDto);
+
+    const result = await this.userRepository.createUser(createUserDto);
+
+    return {
+      ...result,
+      accessToken,
+      refreshToken,
     };
   }
 

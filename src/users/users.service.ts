@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDTO } from './dto/create-user.dto';
 import { GetUserByKeywordDTO } from './dto/get-user.dto';
 import {
   UpdateHashedRefreshTokenDTO,
@@ -11,10 +10,6 @@ import { UserRepository } from './users.repository';
 export class UsersService {
   constructor(private userRepository: UserRepository) {}
 
-  async createUser(createUserDto: CreateUserDTO) {
-    return await this.userRepository.createUser(createUserDto);
-  }
-
   async updateHashedRefreshToken(
     updateHashedRefreshTokenDTO: UpdateHashedRefreshTokenDTO,
   ) {
@@ -23,8 +18,8 @@ export class UsersService {
     );
   }
 
-  async findAll() {
-    return await this.userRepository.findAllUsers();
+  async findAll(userId: string) {
+    return await this.userRepository.findAllUsers(userId);
   }
 
   async findOne(email: string) {
