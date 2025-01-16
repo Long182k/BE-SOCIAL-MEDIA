@@ -79,7 +79,7 @@ export class AdminService {
       this.prisma.event.count(),
 
       // Get post sentiment statistics
-      this.prisma.post.groupBy({
+      await this.prisma.post.groupBy({
         by: ['sentiment'],
         _count: {
           sentiment: true,
@@ -87,7 +87,7 @@ export class AdminService {
       }),
 
       // Get comment sentiment statistics
-      this.prisma.comment.groupBy({
+      await this.prisma.comment.groupBy({
         by: ['sentiment'],
         _count: {
           sentiment: true,
@@ -167,7 +167,7 @@ export class AdminService {
         total: total,
       };
     };
-    console.log('userGrowthData', userGrowthData);
+
     return {
       totalUsers,
       activeUsers,
@@ -198,5 +198,113 @@ export class AdminService {
         count: Number(data.count),
       })),
     };
+  }
+
+  async getUserManagement(page: number, pageSize: number) {
+    const skip = (page - 1) * pageSize;
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        skip,
+        take: pageSize,
+        select: {
+          id: true,
+          userName: true,
+          email: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+          lastLoginAt: true,
+          _count: {
+            select: {
+              posts: true,
+              followers: true,
+              following: true,
+            },
+          },
+          posts: {
+            select: {
+              sentiment: true,
+            },
+          },
+          comments: {
+            select: {
+              sentiment: true,
+            },
+          },
+        },
+      }),
+      this.prisma.user.count(),
+    ]);
+
+    const enrichedUsers = users.map((user) => {
+      // Calculate sentiment ratios
+      const postSentiments = user.posts.reduce(
+        (acc, post) => {
+          acc[post.sentiment] = (acc[post.sentiment] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+
+      const commentSentiments = user.comments.reduce(
+        (acc, comment) => {
+          acc[comment.sentiment] = (acc[comment.sentiment] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+
+      const totalPosts = user.posts.length;
+      const totalComments = user.comments.length;
+
+      // Remove the raw posts and comments data
+      const { posts, comments, ...userData } = user;
+
+      return {
+        ...userData,
+        postSentimentRatio: {
+          GOOD: ((postSentiments.GOOD || 0) / totalPosts) * 100 || 0,
+          MODERATE: ((postSentiments.MODERATE || 0) / totalPosts) * 100 || 0,
+          BAD: ((postSentiments.BAD || 0) / totalPosts) * 100 || 0,
+        },
+        commentSentimentRatio: {
+          GOOD: ((commentSentiments.GOOD || 0) / totalComments) * 100 || 0,
+          MODERATE:
+            ((commentSentiments.MODERATE || 0) / totalComments) * 100 || 0,
+          BAD: ((commentSentiments.BAD || 0) / totalComments) * 100 || 0,
+        },
+      };
+    });
+
+    return {
+      users: enrichedUsers,
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  async toggleUserActivity(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { isActive: true },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        isActive: !user.isActive,
+      },
+      select: {
+        id: true,
+        userName: true,
+        isActive: true,
+      },
+    });
   }
 }
