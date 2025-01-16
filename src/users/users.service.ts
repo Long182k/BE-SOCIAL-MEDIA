@@ -7,6 +7,11 @@ import {
 import { UserRepository } from './users.repository';
 import { PrismaService } from 'src/prisma.service';
 
+interface PaginationParams {
+  page: number;
+  limit: number;
+}
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -145,6 +150,167 @@ export class UsersService {
       isFollowing: !!isFollowing,
       followersCount: followers,
       followingCount: following,
+    };
+  }
+
+  async getFollowers(userId: string, { page, limit }: PaginationParams) {
+    const skip = (page - 1) * limit;
+
+    const [followers, total] = await Promise.all([
+      this.prisma.follow.findMany({
+        where: {
+          followingId: userId,
+        },
+        include: {
+          follower: {
+            select: {
+              id: true,
+              userName: true,
+              avatarUrl: true,
+              bio: true,
+              lastLoginAt: true,
+            },
+          },
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.follow.count({
+        where: {
+          followingId: userId,
+        },
+      }),
+    ]);
+
+    return {
+      followers: followers.map((follow) => follow.follower),
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getFollowing(userId: string, { page, limit }: PaginationParams) {
+    const skip = (page - 1) * limit;
+
+    const [following, total] = await Promise.all([
+      this.prisma.follow.findMany({
+        where: {
+          followerId: userId,
+        },
+        include: {
+          following: {
+            select: {
+              id: true,
+              userName: true,
+              avatarUrl: true,
+              bio: true,
+            },
+          },
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.follow.count({
+        where: {
+          followerId: userId,
+        },
+      }),
+    ]);
+
+    return {
+      following: following.map((follow) => follow.following),
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getSuggestedUsers(userId: string, { page, limit }: PaginationParams) {
+    const skip = (page - 1) * limit;
+
+    // Get IDs of users that current user is already following
+    const following = await this.prisma.follow.findMany({
+      where: {
+        followerId: userId,
+      },
+      select: {
+        followingId: true,
+      },
+    });
+
+    const followingIds = following.map((f) => f.followingId);
+
+    // Get users not being followed, excluding the current user
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where: {
+          AND: [
+            {
+              id: {
+                notIn: [...followingIds, userId], // Exclude followed users and self
+              },
+            },
+            {
+              isActive: true, // Only get active users
+            },
+          ],
+        },
+        select: {
+          id: true,
+          userName: true,
+          avatarUrl: true,
+          bio: true,
+          _count: {
+            select: {
+              followers: true,
+              following: true,
+            },
+          },
+        },
+        orderBy: {
+          followers: {
+            _count: 'desc', // Order by follower count
+          },
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.user.count({
+        where: {
+          AND: [
+            {
+              id: {
+                notIn: [...followingIds, userId],
+              },
+            },
+            {
+              isActive: true,
+            },
+          ],
+        },
+      }),
+    ]);
+
+    return {
+      suggestions: users.map((user) => ({
+        ...user,
+        followersCount: user._count.followers,
+        followingCount: user._count.following,
+        _count: undefined,
+      })),
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 }

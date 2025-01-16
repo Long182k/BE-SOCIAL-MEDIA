@@ -22,6 +22,11 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findOne(email);
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('User is not active');
+    }
+
     const isVerifiedPassword = await argon.verify(
       user.hashedPassword,
       password,
