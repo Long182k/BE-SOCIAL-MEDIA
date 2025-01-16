@@ -691,6 +691,12 @@ export class EventsService {
               attendee.role === AttendeeRole.ATTENDEE) &&
             attendee.status === AttendeeStatus.ENROLL,
         ).length,
+        activeAttendeesCount: event.attendees.filter(
+          (attendee) =>
+            (attendee.role === AttendeeRole.ADMIN ||
+              attendee.role === AttendeeRole.ATTENDEE) &&
+            attendee.status === AttendeeStatus.ENROLL,
+        ).length,
       })),
       meta: {
         total,

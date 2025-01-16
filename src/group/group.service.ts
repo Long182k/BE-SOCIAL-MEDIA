@@ -252,6 +252,8 @@ export class GroupService {
               select: {
                 id: true,
                 userName: true,
+                email: true,
+                dateOfBirth: true,
                 avatarUrl: true,
               },
             },

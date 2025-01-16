@@ -376,6 +376,16 @@ export class AdminService {
               userName: true,
             },
           },
+          attendees: {
+            where: {
+              AND: [
+                {
+                  OR: [{ role: 'ADMIN' }, { role: 'ATTENDEE' }],
+                },
+                { status: 'ENROLL' },
+              ],
+            },
+          },
           _count: {
             select: {
               attendees: true,
@@ -386,8 +396,16 @@ export class AdminService {
       this.prisma.event.count(),
     ]);
 
+    const enrichedEvents = events.map((event) => {
+      const { attendees, ...rest } = event;
+      return {
+        ...rest,
+        attendeesCount: attendees.length,
+      };
+    });
+
     return {
-      events,
+      events: enrichedEvents,
       total,
       page,
       pageSize,
