@@ -7,6 +7,7 @@ import * as argon from 'argon2';
 import { UpdateHashedRefreshTokenDTO } from 'src/users/dto/update-user.dto';
 import { CreateUserDTO } from 'src/users/dto/create-user.dto';
 import { UserRepository } from 'src/users/users.repository';
+import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
 export class AuthService {
@@ -16,6 +17,7 @@ export class AuthService {
     private userRepository: UserRepository,
     @Inject(refreshTokenJwtConfig.KEY)
     private refreshTokenConfig: ConfigType<typeof refreshTokenJwtConfig>,
+    private prisma: PrismaService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -51,6 +53,7 @@ export class AuthService {
       userId: user.id,
       userName: user.userName,
       email: user.email,
+      role: user.role,
       avatarUrl: user.avatarUrl,
       coverPageUrl: user.coverPageUrl,
     };
@@ -143,6 +146,15 @@ export class AuthService {
       userId,
       hashedRefreshToken: null,
     };
+
+    // Update both hashedRefreshToken and lastLoginAt
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        hashedRefreshToken: null,
+        lastLoginAt: new Date(),
+      },
+    });
 
     return await this.usersService.updateHashedRefreshToken(payloadUpdate);
   }
