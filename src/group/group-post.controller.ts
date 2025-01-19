@@ -7,27 +7,32 @@ import {
   Body,
   Param,
   UseGuards,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { GroupPostService } from './group-post.service';
 import { JwtAuthGuard } from '../auth/@guard/jwt-auth.guard';
 import { CreatePostDto, UpdatePostDto } from 'src/posts/dto/post.dto';
 import { CurrentUser } from 'src/auth/@decorator/current-user.decorator';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
-@Controller('groups/:groupId/posts')
+@Controller('groups-posts')
 @UseGuards(JwtAuthGuard)
 export class GroupPostController {
   constructor(private readonly groupPostService: GroupPostService) {}
 
-  @Post()
+  @Post(':groupId')
+  @UseInterceptors(FilesInterceptor('files', 5))
   createGroupPost(
     @CurrentUser('userId') userId: string,
     @Param('groupId') groupId: string,
     @Body() dto: CreatePostDto,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return this.groupPostService.createGroupPost(userId, groupId, dto);
+    return this.groupPostService.createGroupPost(userId, groupId, dto, files);
   }
 
-  @Get()
+  @Get(':groupId')
   getGroupPosts(@Param('groupId') groupId: string) {
     return this.groupPostService.getGroupPosts(groupId);
   }

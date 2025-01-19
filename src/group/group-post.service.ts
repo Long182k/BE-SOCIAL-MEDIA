@@ -5,13 +5,24 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreatePostDto, UpdatePostDto } from 'src/posts/dto/post.dto';
+import { NlpService } from '../nlp/nlp.service';
+import { CloudinaryService } from 'src/file/file.service';
 
 @Injectable()
 export class GroupPostService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private nlpService: NlpService,
+    private cloudinaryService: CloudinaryService,
+  ) {}
 
   // Create post in group
-  async createGroupPost(userId: string, groupId: string, dto: CreatePostDto) {
+  async createGroupPost(
+    userId: string,
+    groupId: string,
+    dto: CreatePostDto,
+    files: Express.Multer.File[],
+  ) {
     // Check if user is member of the group
     const member = await this.prisma.groupMember.findUnique({
       where: {
@@ -26,16 +37,28 @@ export class GroupPostService {
       throw new ForbiddenException('Only group members can create posts');
     }
 
+    // Evaluate content using NLP service
+    await this.nlpService.evaluateContent(dto.content);
+
+    // Upload files if any
+    let attachments = undefined;
+    if (files?.length > 0) {
+      const uploadedFiles =
+        await this.cloudinaryService.uploadMultipleFiles(files);
+      attachments = {
+        create: uploadedFiles.map((file) => ({
+          url: file.url,
+          type: file.type as 'image' | 'video',
+        })),
+      };
+    }
+
     return this.prisma.post.create({
       data: {
         content: dto.content,
         user: { connect: { id: userId } },
         group: { connect: { id: groupId } },
-        attachments: dto.attachments
-          ? {
-              create: dto.attachments,
-            }
-          : undefined,
+        attachments: attachments,
       },
       include: {
         user: true,
