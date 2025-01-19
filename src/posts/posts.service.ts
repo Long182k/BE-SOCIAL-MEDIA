@@ -79,6 +79,7 @@ export class PostsService {
           comments: {
             include: {
               user: true,
+              attachments: true,
             },
           },
           attachments: true,
@@ -123,6 +124,7 @@ export class PostsService {
         comments: {
           include: {
             user: true,
+            attachments: true,
           },
         },
         _count: {

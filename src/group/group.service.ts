@@ -229,9 +229,6 @@ export class GroupService {
     id: string,
     userId: string | undefined,
   ) {
-    console.log('🚀  userId:', userId);
-    console.log('🚀  userId:', typeof userId);
-
     const group = await this.prisma.group.findUnique({
       where: { id },
       include: {

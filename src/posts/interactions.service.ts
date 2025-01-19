@@ -5,12 +5,15 @@ import { CreateCommentDto } from './dto/post.dto';
 import { NotificationType } from '@prisma/client';
 import { NotificationService } from 'src/notification/notification.service';
 import { NlpService } from '../nlp/nlp.service';
+import { CloudinaryService } from 'src/file/file.service';
+import { AttachmentsUploadedType } from 'src/file/file.type';
 
 @Injectable()
 export class InteractionsService {
   constructor(
     private prisma: PrismaService,
     private notificationService: NotificationService,
+    private readonly cloudinaryService: CloudinaryService,
     private nlpService: NlpService,
   ) {}
 
@@ -70,8 +73,12 @@ export class InteractionsService {
     postId: string,
     userId: string,
     createCommentDto: CreateCommentDto,
+    files: Express.Multer.File[],
   ) {
     const { content } = createCommentDto;
+
+    let attachmentsUploaded: AttachmentsUploadedType[];
+
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
     });
@@ -80,15 +87,33 @@ export class InteractionsService {
 
     const sentiment = await this.nlpService.evaluateContent(content);
 
+    if (files && files.length > 0) {
+      const uploadedFiles =
+        await this.cloudinaryService.uploadMultipleFiles(files);
+
+      attachmentsUploaded = uploadedFiles.map((file) => ({
+        type: file.type as 'image' | 'video',
+        url: file.url,
+      }));
+    }
+
     const result = await this.prisma.comment.create({
       data: {
         content,
         userId,
         postId,
         sentiment,
+        attachments: attachmentsUploaded
+          ? {
+              createMany: {
+                data: attachmentsUploaded,
+              },
+            }
+          : undefined,
       },
       include: {
         user: true,
+        attachments: true,
       },
     });
 

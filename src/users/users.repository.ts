@@ -119,9 +119,14 @@ export class UserRepository {
     if (data.coverPageUrl !== undefined)
       updateData.coverPageUrl = data.coverPageUrl;
 
-    return await this.prisma.user.update({
+    const result = await this.prisma.user.update({
       where: { id: userId },
       data: updateData,
     });
+
+    return {
+      ...result,
+      userId,
+    };
   }
 }

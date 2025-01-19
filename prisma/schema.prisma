@@ -84,45 +84,49 @@ model Follow {
 }
 
 model Post {
-  id          String     @id @default(uuid())
-  content     String     @db.Text
+  id          String       @id @default(uuid())
+  content     String       @db.Text
   userId      String
   groupId     String?
-  sentiment   String     @default("MODERATE")
-  createdAt   DateTime   @default(now())
+  sentiment   String       @default("MODERATE")
+  createdAt   DateTime     @default(now())
   bookmarks   Bookmark[]
   comments    Comment[]
   likes       Like[]
-  attachments Media[]
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group       Group?     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  attachments Attachment[]
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group       Group?       @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "posts_userId_fkey")
   @@index([groupId])
   @@map("posts")
 }
 
-model Media {
+model Attachment {
   id        String    @id @default(uuid())
   postId    String?
+  commentId String?
   type      MediaType
   url       String
   createdAt DateTime  @default(now())
   post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  Comment   Comment?  @relation(fields: [commentId], references: [id])
 
   @@index([postId], map: "post_media_postId_fkey")
-  @@map("post_media")
+  @@index([commentId], map: "post_media_commentId_fkey")
+  @@map("attachments")
 }
 
 model Comment {
-  id        String   @id @default(uuid())
-  content   String   @db.Text
-  userId    String
-  postId    String
-  sentiment String   @default("MODERATE")
-  createdAt DateTime @default(now())
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String       @id @default(uuid())
+  content     String       @db.Text
+  userId      String
+  postId      String
+  sentiment   String       @default("MODERATE")
+  attachments Attachment[]
+  createdAt   DateTime     @default(now())
+  post        Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([postId], map: "comments_postId_fkey")
   @@index([userId], map: "comments_userId_fkey")
@@ -328,5 +332,3 @@ enum EventCategory {
   HEALTH
   OTHER
 }
-
-
