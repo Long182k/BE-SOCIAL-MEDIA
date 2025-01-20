@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
-import { GroupRole } from '@prisma/client';
+import { GroupRole, Role } from '@prisma/client';
 import { CloudinaryService } from 'src/file/file.service';
 
 @Injectable()
@@ -15,10 +15,8 @@ export class GroupService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  // Get groups (user's groups or groups user hasn't joined)
   async getGroups(userId: string, onlyUserGroups: boolean) {
     if (onlyUserGroups) {
-      // Get groups where user is a member (role is not PENDING)
       return this.prisma.group.findMany({
         where: {
           members: {
@@ -52,14 +50,19 @@ export class GroupService {
           },
           _count: {
             select: {
-              members: true,
+              members: {
+                where: {
+                  role: {
+                    in: [GroupRole.ADMIN, GroupRole.MEMBER],
+                  },
+                },
+              },
             },
           },
         },
       });
     }
 
-    // Get groups where user is NOT a member or has PENDING status
     return this.prisma.group.findMany({
       where: {
         OR: [
@@ -89,23 +92,25 @@ export class GroupService {
           },
         },
         members: {
-          // where: {
-          //   userId,
-          // },
           select: {
             role: true,
           },
         },
         _count: {
           select: {
-            members: true,
+            members: {
+              where: {
+                role: {
+                  in: [GroupRole.ADMIN, GroupRole.MEMBER],
+                },
+              },
+            },
           },
         },
       },
     });
   }
 
-  // Create group
   async createGroup(
     userId: string,
     dto: CreateGroupDto,
@@ -139,7 +144,6 @@ export class GroupService {
     return group;
   }
 
-  // Request to join group
   async requestJoinGroup(userId: string, groupId: string) {
     const group = await this.prisma.group.findUnique({
       where: { id: groupId },
@@ -156,6 +160,7 @@ export class GroupService {
     const existingMember = group.members.find(
       (member) => member.userId === userId,
     );
+
     if (existingMember) {
       throw new ForbiddenException('User is already a member of this group');
     }
@@ -165,40 +170,24 @@ export class GroupService {
       data: {
         groupId,
         role: GroupRole.PENDING,
+        userId,
       },
     });
   }
 
-  // Get join requests (for admins)
   async getJoinRequests(userId: string, groupId: string) {
-    const isAdmin = await this.isGroupAdmin(userId, groupId);
-    if (!isAdmin) {
-      throw new ForbiddenException('Only admins can view join requests');
-    }
-
     return this.prisma.groupMember.findMany({
       where: {
         groupId,
+        role: GroupRole.PENDING,
       },
       include: {
-        user: {
-          select: {
-            id: true,
-            userName: true,
-            avatarUrl: true,
-          },
-        },
+        user: true,
       },
     });
   }
 
-  // Approve join request
   async approveJoinRequest(adminId: string, groupId: string, userId: string) {
-    const isAdmin = await this.isGroupAdmin(adminId, groupId);
-    if (!isAdmin) {
-      throw new ForbiddenException('Only admins can approve join requests');
-    }
-
     return this.prisma.groupMember.update({
       where: {
         userId_groupId: {
@@ -213,6 +202,71 @@ export class GroupService {
     });
   }
 
+  async rejectJoinRequest(
+    adminId: string,
+    id: string,
+    userId: string | undefined,
+  ) {
+    const group = await this.prisma.group.findUnique({
+      where: { id },
+      include: {
+        members: true,
+      },
+    });
+
+    if (!group) throw new NotFoundException('Group not found');
+
+    if (userId === 'undefined') {
+      console.log('1');
+      // User canceling their own request
+      const memberExists = await this.prisma.groupMember.findUnique({
+        where: {
+          userId_groupId: {
+            userId: adminId,
+            groupId: id,
+          },
+        },
+      });
+
+      if (!memberExists) {
+        throw new NotFoundException('Member not found in this group');
+      }
+
+      return this.prisma.groupMember.delete({
+        where: {
+          userId_groupId: {
+            userId: adminId,
+            groupId: id,
+          },
+        },
+      });
+    } else {
+      console.log('2');
+      // Admin rejecting a user's request
+      const memberExists = await this.prisma.groupMember.findUnique({
+        where: {
+          userId_groupId: {
+            userId,
+            groupId: id,
+          },
+        },
+      });
+
+      if (!memberExists) {
+        throw new NotFoundException('Member not found in this group');
+      }
+
+      return this.prisma.groupMember.delete({
+        where: {
+          userId_groupId: {
+            userId,
+            groupId: id,
+          },
+        },
+      });
+    }
+  }
+
   // Helper method to check if user is group admin
   private async isGroupAdmin(
     userId: string,
@@ -225,9 +279,17 @@ export class GroupService {
           groupId,
         },
       },
+      include: {
+        user: true,
+      },
     });
 
-    return member?.role === GroupRole.ADMIN;
+    // If member doesn't exist in the group, they can't be an admin
+    if (!member) {
+      return false;
+    }
+
+    return member.role === GroupRole.ADMIN || member.user.role === Role.ADMIN;
   }
 
   async getGroupById(userId: string, groupId: string) {
@@ -252,6 +314,8 @@ export class GroupService {
               select: {
                 id: true,
                 userName: true,
+                email: true,
+                dateOfBirth: true,
                 avatarUrl: true,
               },
             },
@@ -261,8 +325,8 @@ export class GroupService {
           select: {
             members: {
               where: {
-                NOT: {
-                  role: GroupRole.PENDING,
+                role: {
+                  in: [GroupRole.ADMIN, GroupRole.MEMBER],
                 },
               },
             },

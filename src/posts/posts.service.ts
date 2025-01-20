@@ -73,12 +73,14 @@ export class PostsService {
           content: {
             contains: search,
           },
+          groupId: null,
         },
         include: {
           user: true,
           comments: {
             include: {
               user: true,
+              attachments: true,
             },
           },
           attachments: true,
@@ -99,6 +101,7 @@ export class PostsService {
           content: {
             contains: search,
           },
+          groupId: null,
         },
       }),
     ]);
@@ -123,6 +126,7 @@ export class PostsService {
         comments: {
           include: {
             user: true,
+            attachments: true,
           },
         },
         _count: {

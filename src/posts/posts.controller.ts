@@ -70,11 +70,18 @@ export class PostsController {
   }
 
   @Post(':id/comment')
+  @UseInterceptors(FilesInterceptor('files', 5))
   createComment(
     @Param('id') id: string,
     @CurrentUser('userId') userId: string,
     @Body() createCommentDto: CreateCommentDto,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return this.interactionsService.createComment(id, userId, createCommentDto);
+    return this.interactionsService.createComment(
+      id,
+      userId,
+      createCommentDto,
+      files,
+    );
   }
 }

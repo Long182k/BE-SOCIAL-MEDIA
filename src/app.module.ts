@@ -18,6 +18,7 @@ import { PrismaService } from './prisma.service';
 import { SocketModule } from './socket/chat.module';
 import { UsersController } from './users/users.controller';
 import { UsersModule } from './users/users.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { UsersModule } from './users/users.module';
     GroupModule,
     EventsModule,
     NotificationModule,
+    AdminModule,
   ],
   controllers: [UsersController],
   providers: [

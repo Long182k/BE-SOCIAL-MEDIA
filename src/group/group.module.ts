@@ -6,6 +6,7 @@ import { GroupPostService } from './group-post.service';
 import { PrismaService } from '../prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { CloudinaryService } from 'src/file/file.service';
+import { NlpService } from '../nlp/nlp.service';
 
 @Module({
   controllers: [GroupController, GroupPostController],
@@ -15,6 +16,7 @@ import { CloudinaryService } from 'src/file/file.service';
     PrismaService,
     JwtService,
     CloudinaryService,
+    NlpService,
   ],
 })
 export class GroupModule {}

@@ -7,6 +7,8 @@ import {
   Patch,
   UploadedFile,
   UseInterceptors,
+  Post,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from 'src/auth/@decorator/current-user.decorator';
@@ -71,5 +73,57 @@ export class UsersController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(+id);
+  }
+
+  @Post('follow/:userId')
+  async followUser(
+    @CurrentUser('userId') followerId: string,
+    @Param('userId') userId: string,
+  ) {
+    return await this.usersService.followUser(followerId, userId);
+  }
+
+  @Get('follow-status/:userId')
+  async getFollowStatus(
+    @CurrentUser('userId') followerId: string,
+    @Param('userId') userId: string,
+  ) {
+    return await this.usersService.getFollowStatus(followerId, userId);
+  }
+
+  @Get('followers/:userId')
+  async getFollowers(
+    @Param('userId') userId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return await this.usersService.getFollowers(userId, {
+      page,
+      limit,
+    });
+  }
+
+  @Get('following/:userId')
+  async getFollowing(
+    @Param('userId') userId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return await this.usersService.getFollowing(userId, {
+      page,
+      limit,
+    });
+  }
+
+  @Get('suggestions')
+  async getSuggestedUsers(
+    @CurrentUser('userId') userId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return await this.usersService.getSuggestedUsers(userId, {
+      page,
+      limit,
+    });
   }
 }

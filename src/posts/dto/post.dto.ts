@@ -10,5 +10,4 @@ export class UpdatePostDto {
 
 export class CreateCommentDto {
   content: string;
-  imageUrl?: string;
 }

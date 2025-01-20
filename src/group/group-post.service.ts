@@ -5,14 +5,23 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreatePostDto, UpdatePostDto } from 'src/posts/dto/post.dto';
+import { NlpService } from '../nlp/nlp.service';
+import { CloudinaryService } from 'src/file/file.service';
 
 @Injectable()
 export class GroupPostService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private nlpService: NlpService,
+    private cloudinaryService: CloudinaryService,
+  ) {}
 
-  // Create post in group
-  async createGroupPost(userId: string, groupId: string, dto: CreatePostDto) {
-    // Check if user is member of the group
+  async createGroupPost(
+    userId: string,
+    groupId: string,
+    dto: CreatePostDto,
+    files: Express.Multer.File[],
+  ) {
     const member = await this.prisma.groupMember.findUnique({
       where: {
         userId_groupId: {
@@ -26,16 +35,26 @@ export class GroupPostService {
       throw new ForbiddenException('Only group members can create posts');
     }
 
+    await this.nlpService.evaluateContent(dto.content);
+
+    let attachments = undefined;
+    if (files?.length > 0) {
+      const uploadedFiles =
+        await this.cloudinaryService.uploadMultipleFiles(files);
+      attachments = {
+        create: uploadedFiles.map((file) => ({
+          url: file.url,
+          type: file.type as 'image' | 'video',
+        })),
+      };
+    }
+
     return this.prisma.post.create({
       data: {
         content: dto.content,
         user: { connect: { id: userId } },
         group: { connect: { id: groupId } },
-        attachments: dto.attachments
-          ? {
-              create: dto.attachments,
-            }
-          : undefined,
+        attachments: attachments,
       },
       include: {
         user: true,
@@ -44,7 +63,6 @@ export class GroupPostService {
     });
   }
 
-  // Get group posts
   async getGroupPosts(groupId: string) {
     return this.prisma.post.findMany({
       where: {
@@ -66,7 +84,6 @@ export class GroupPostService {
     });
   }
 
-  // Update group post
   async updateGroupPost(
     userId: string,
     groupId: string,
@@ -76,40 +93,30 @@ export class GroupPostService {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
       include: {
-        user: true,
+        attachments: true,
       },
     });
 
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.userId !== userId) throw new ForbiddenException('Access denied');
 
-    const member = await this.prisma.groupMember.findUnique({
-      where: {
-        userId_groupId: {
-          userId,
-          groupId,
-        },
-      },
-    });
-
-    // Check if user is post owner or group admin
-    if (post.userId !== userId && member?.role !== 'ADMIN') {
-      throw new ForbiddenException(
-        'Only post owner or group admin can update this post',
-      );
+    // If we have new attachments, create them
+    let attachmentsToCreate = [];
+    if (dto.attachments && dto.attachments.length > 0) {
+      attachmentsToCreate = dto.attachments.map((attachment) => ({
+        type: attachment.type,
+        url: attachment.url,
+      }));
     }
 
     return this.prisma.post.update({
       where: { id: postId },
       data: {
         content: dto.content,
-        attachments: dto.attachments
-          ? {
-              deleteMany: {},
-              create: dto.attachments,
-            }
-          : undefined,
+        attachments: {
+          deleteMany: {}, // Delete existing attachments
+          create: attachmentsToCreate, // Create new ones if they exist
+        },
       },
       include: {
         user: true,

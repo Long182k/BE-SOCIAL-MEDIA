@@ -274,8 +274,6 @@ export class EventsService {
       (a) => a.userId === adminUserId && a.role === AttendeeRole.ADMIN,
     );
 
-    if (!isAdmin)
-      throw new ForbiddenException('Only event admins can approve requests');
 
     return this.prisma.eventAttendee.update({
       where: {
@@ -294,35 +292,15 @@ export class EventsService {
   async cancelAttendance(
     id: string,
     cancelledUserId: string | undefined,
-    userId: string,
+    adminId: string,
   ) {
-    if (cancelledUserId) {
+    if (cancelledUserId !== 'undefined') {
       const event = await this.prisma.event.findUnique({
         where: { id },
         include: { attendees: true },
       });
 
       if (!event) throw new NotFoundException('Event not found');
-
-      // const isAdmin = event.attendees.some(
-      //   (a) => a.userId === userId && a.role === AttendeeRole.ADMIN,
-      // );
-
-      // if (!isAdmin) {
-      //   throw new ForbiddenException('Only admins can cancel other attendees');
-      // }
-
-      // return this.prisma.eventAttendee.update({
-      //   where: {
-      //     userId_eventId: {
-      //       userId: cancelledUserId,
-      //       eventId: id,
-      //     },
-      //   },
-      //   data: {
-      //     status: AttendeeStatus.CANCEL,
-      //   },
-      // });
 
       return this.prisma.eventAttendee.delete({
         where: {
@@ -336,7 +314,7 @@ export class EventsService {
       return this.prisma.eventAttendee.delete({
         where: {
           userId_eventId: {
-            userId,
+            userId: adminId,
             eventId: id,
           },
         },
@@ -623,7 +601,6 @@ export class EventsService {
                 some: {
                   userId,
                   status: AttendeeStatus.ENROLL,
-                  // role: AttendeeRole.ATTENDEE || AttendeeRole.ADMIN,
                 },
               },
             },
@@ -686,6 +663,12 @@ export class EventsService {
         creator: event.creator,
         attendees: event.attendees,
         attendeesCount: event.attendees.filter(
+          (attendee) =>
+            (attendee.role === AttendeeRole.ADMIN ||
+              attendee.role === AttendeeRole.ATTENDEE) &&
+            attendee.status === AttendeeStatus.ENROLL,
+        ).length,
+        activeAttendeesCount: event.attendees.filter(
           (attendee) =>
             (attendee.role === AttendeeRole.ADMIN ||
               attendee.role === AttendeeRole.ATTENDEE) &&

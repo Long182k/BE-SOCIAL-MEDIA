@@ -20,6 +20,7 @@ model User {
   dateOfBirth           DateTime?
   isActive              Boolean           @default(true)
   createdAt             DateTime          @default(now())
+  lastLoginAt           DateTime?
   bookmarks             Bookmark[]
   comments              Comment[]
   following             Follow[]          @relation("Following")
@@ -55,13 +56,14 @@ model Group {
 }
 
 model GroupMember {
-  id       String    @id @default(uuid())
+  id       String       @id @default(uuid())
   groupId  String
   userId   String?
-  role     GroupRole @default(MEMBER)
-  joinedAt DateTime  @default(now())
-  group    Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     GroupRole    @default(MEMBER)
+  status   GroupStatus? @default(JOINED)
+  joinedAt DateTime     @default(now())
+  group    Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, groupId])
   @@index([groupId])
@@ -82,45 +84,52 @@ model Follow {
 }
 
 model Post {
-  id          String     @id @default(uuid())
-  content     String     @db.Text
+  id          String       @id @default(uuid())
+  content     String       @db.Text
   userId      String
   groupId     String?
-  sentiment   String     @default("MODERATE")
-  createdAt   DateTime   @default(now())
+  sentiment   String       @default("MODERATE")
+  createdAt   DateTime     @default(now())
   bookmarks   Bookmark[]
   comments    Comment[]
   likes       Like[]
-  attachments Media[]
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group       Group?     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  attachments Attachment[]
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group       Group?       @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "posts_userId_fkey")
   @@index([groupId])
   @@map("posts")
 }
 
-model Media {
-  id        String    @id @default(uuid())
-  postId    String?
-  type      MediaType
-  url       String
-  createdAt DateTime  @default(now())
-  post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+model Attachment {
+  id            String       @id @default(uuid())
+  postId        String?
+  commentId     String?
+  type          MediaType
+  url           String
+  createdAt     DateTime     @default(now())
+  post          Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  Comment       Comment?     @relation(fields: [commentId], references: [id])
+  ChatMessage   ChatMessage? @relation(fields: [chatMessageId], references: [id])
+  chatMessageId String?
 
   @@index([postId], map: "post_media_postId_fkey")
-  @@map("post_media")
+  @@index([commentId], map: "post_media_commentId_fkey")
+  @@index([chatMessageId], map: "chat_message_media_messageId_fkey")
+  @@map("attachments")
 }
 
 model Comment {
-  id        String   @id @default(uuid())
-  content   String   @db.Text
-  userId    String
-  postId    String
-  sentiment String   @default("MODERATE")
-  createdAt DateTime @default(now())
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String       @id @default(uuid())
+  content     String       @db.Text
+  userId      String
+  postId      String
+  sentiment   String       @default("MODERATE")
+  attachments Attachment[]
+  createdAt   DateTime     @default(now())
+  post        Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([postId], map: "comments_postId_fkey")
   @@index([userId], map: "comments_userId_fkey")
@@ -198,31 +207,20 @@ model ChatParticipant {
 }
 
 model ChatMessage {
-  id          String           @id @default(uuid())
-  content     String           @db.Text
-  type        String           @default("MESSAGE")
+  id          String       @id @default(uuid())
+  content     String       @db.Text
+  type        String       @default("MESSAGE")
   senderId    String
   receiverId  String
   chatRoomId  String
-  user        User             @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  chatRoom    ChatRoom         @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
-  attachments ChatAttachment[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  user        User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  chatRoom    ChatRoom     @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  attachments Attachment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@index([senderId])
   @@index([chatRoomId])
-}
-
-model ChatAttachment {
-  id        String             @id @default(uuid())
-  type      ChatAttachmentType @default(image)
-  url       String
-  messageId String
-  message   ChatMessage        @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  createdAt DateTime           @default(now())
-
-  @@index([messageId])
 }
 
 model Event {
@@ -307,6 +305,12 @@ enum AttendeeStatus {
   ENROLL
   PENDING
   CANCEL
+}
+
+enum GroupStatus {
+  JOINED
+  PENDING
+  REJECTED
 }
 
 enum EventCategory {

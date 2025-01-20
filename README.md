@@ -22,17 +22,125 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+# BE-Social-Media
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Backend service for Social Media platform built with NestJS, Prisma, and WebSocket, featuring intelligent content evaluation through Natural Language Processing.
 
-## Project setup
+## Key Features
+
+### Content Evaluation with NLP
+
+The platform implements advanced Natural Language Processing to:
+
+- Analyze sentiment in user posts and comments
+- Detect potential harmful or inappropriate content
+- Provide content mood insights
+- Help maintain a positive community environment
+
+### Real-time Communication
+
+- WebSocket integration for instant messaging
+- Live notifications for user interactions
+- Real-time content updates
+
+### Media Management
+
+- Cloudinary integration for media file handling
+- Support for images and videos
+- Secure file storage and delivery
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- PNPM package manager
+- PostgreSQL database
+
+### Installation
 
 ```bash
-$ pnpm install
+# Clone the repository
+git clone https://github.com/Long182k/BE-SOCIAL-MEDIA.git
+cd BE-Social-Media
+
+# Install dependencies
+pnpm install
+
+# Start the development server
+pnpm start:dev
 ```
 
-## Compile and run the project
+## Architecture
+
+The application is built using NestJS framework with a modular architecture:
+
+### Core Modules
+
+1. **NLP Module**
+
+   - Content sentiment analysis
+   - Text classification
+   - Mood detection
+   - Content moderation
+
+2. **Authentication Module**
+
+   - JWT-based authentication
+   - User session management
+   - Security middleware
+
+3. **Posts Module**
+
+   - Content creation and management
+   - Automatic sentiment analysis
+   - Media attachment handling
+
+4. **WebSocket Module**
+   - Real-time messaging
+   - Live notifications
+   - User presence tracking
+
+## Some API Endpoints Sample
+
+### Content Management
+
+- `POST /posts` - Create new post (with automatic sentiment analysis)
+- `GET /posts` - Get all posts with pagination
+- `GET /posts/:id` - Get specific post with sentiment data
+- `PUT /posts/:id` - Update post
+- `DELETE /posts/:id` - Delete post
+
+### NLP Analysis
+
+- `POST /nlp/analyze` - Analyze content sentiment
+- `POST /nlp/evaluate` - Evaluate content appropriateness
+- `GET /nlp/stats` - Get content analysis statistics
+
+[Previous endpoints remain the same...]
+
+## Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/dbname"
+JWT_SECRET="your-jwt-secret"
+CLOUDINARY_CLOUD_NAME="your-cloud-name"
+CLOUDINARY_API_KEY="your-api-key"
+CLOUDINARY_API_SECRET="your-api-secret"
+NLP_API_KEY="your-nlp-service-key"
+```
+
+## Content Evaluation Flow
+
+1. User creates/updates content
+2. NLP service analyzes the content
+3. Sentiment and appropriateness scores are generated
+4. Content is stored with analysis results
+5. Moderation flags are raised if needed
+
+## Development
 
 ```bash
 # development
@@ -45,7 +153,7 @@ $ pnpm run start:dev
 $ pnpm run start:prod
 ```
 
-## Run tests
+## Testing
 
 ```bash
 # unit tests
@@ -60,27 +168,20 @@ $ pnpm run test:cov
 
 ## Resources
 
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+- [NestJS Documentation](https://docs.nestjs.com)
+- [Natural Language Processing API Docs](https://your-nlp-service-docs)
+- [WebSocket Integration Guide](https://docs.nestjs.com/websockets/gateways)
 
 ## Support
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+This project is open source and welcomes contributions. Feel free to submit issues and enhancement requests.
+
+## License
+
+This project is [MIT licensed](LICENSE).
 
 ## Stay in touch
 
 - Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
 - Website - [https://nestjs.com](https://nestjs.com/)
 - Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).

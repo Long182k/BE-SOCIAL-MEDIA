@@ -1,12 +1,14 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import refreshTokenJwtConfig from './@config/refresh_token-jwt.config'; // Adjust the path as needed
+import refreshTokenJwtConfig from './@config/refresh_token-jwt.config'; 
 import { ConfigType } from '@nestjs/config';
 import * as argon from 'argon2';
 import { UpdateHashedRefreshTokenDTO } from 'src/users/dto/update-user.dto';
 import { CreateUserDTO } from 'src/users/dto/create-user.dto';
 import { UserRepository } from 'src/users/users.repository';
+import { PrismaService } from 'src/prisma.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -16,10 +18,16 @@ export class AuthService {
     private userRepository: UserRepository,
     @Inject(refreshTokenJwtConfig.KEY)
     private refreshTokenConfig: ConfigType<typeof refreshTokenJwtConfig>,
+    private prisma: PrismaService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findOne(email);
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('User is not active');
+    }
+
     const isVerifiedPassword = await argon.verify(
       user.hashedPassword,
       password,
@@ -43,14 +51,13 @@ export class AuthService {
 
     await this.usersService.updateHashedRefreshToken(payloadUpdate);
 
-    // TODO: Store hashedRefreshToken into Redis
-
     return {
       accessToken,
       refreshToken,
       userId: user.id,
       userName: user.userName,
       email: user.email,
+      role: user.role,
       avatarUrl: user.avatarUrl,
       coverPageUrl: user.coverPageUrl,
     };
@@ -144,10 +151,40 @@ export class AuthService {
       hashedRefreshToken: null,
     };
 
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        hashedRefreshToken: null,
+        lastLoginAt: new Date(),
+      },
+    });
+
     return await this.usersService.updateHashedRefreshToken(payloadUpdate);
   }
 
   async getUserById(id: string) {
     return await this.usersService.findUserByKeyword({ id });
+  }
+
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    const isPasswordValid = await argon.verify(
+      user.hashedPassword,
+      changePasswordDto.oldPassword,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const hashedPassword = await argon.hash(changePasswordDto.newPassword);
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { hashedPassword },
+    });
   }
 }

@@ -8,6 +8,7 @@ import { ChatMessageService } from './chat-message.service';
 import { ChatRoomService } from './chat-room.service';
 import { ChatController } from './chat.controller';
 import { ChatGateway } from './chat.gateway';
+import { CloudinaryService } from 'src/file/file.service';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ChatGateway } from './chat.gateway';
     JwtService,
     ChatController,
     ChatGateway,
+    CloudinaryService,
   ],
   exports: [ChatMessageService, ChatRoomService],
 })

@@ -15,6 +15,7 @@ import { Public } from './@decorator/public';
 import { JwtAuthGuard } from './@guard/jwt-auth.guard';
 import { RefreshAuthGuard } from './@guard/refresh-auth.guard';
 import { AuthService } from './auth.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -64,5 +65,17 @@ export class AuthController {
   @Get('profile/:id')
   getProfileById(@Param('id') id: string) {
     return this.authService.getUserById(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  async changePassword(
+    @Request() req,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return await this.authService.changePassword(
+      req.user.userId,
+      changePasswordDto,
+    );
   }
 }

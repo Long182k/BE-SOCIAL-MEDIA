@@ -2,6 +2,8 @@ import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { ChatRoomService } from './chat-room.service';
 import { ChatMessageService } from './chat-message.service';
 import { CreateDirectChatDTO, SendMessageDTO } from './dto/chat.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { UseInterceptors, UploadedFiles } from '@nestjs/common';
 
 @Controller('chat')
 export class ChatController {
@@ -26,7 +28,11 @@ export class ChatController {
   }
 
   @Post('message/send')
-  async sendMessage(@Body() params: SendMessageDTO) {
-    return this.chatMessageService.createMessage(params);
+  @UseInterceptors(FilesInterceptor('files', 5))
+  async sendMessage(
+    @Body() params: SendMessageDTO,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.chatMessageService.createMessage(params, files);
   }
 }
