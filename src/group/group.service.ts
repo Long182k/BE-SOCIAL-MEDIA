@@ -15,10 +15,8 @@ export class GroupService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  // Get groups (user's groups or groups user hasn't joined)
   async getGroups(userId: string, onlyUserGroups: boolean) {
     if (onlyUserGroups) {
-      // Get groups where user is a member (role is not PENDING)
       return this.prisma.group.findMany({
         where: {
           members: {
@@ -65,7 +63,6 @@ export class GroupService {
       });
     }
 
-    // Get groups where user is NOT a member or has PENDING status
     return this.prisma.group.findMany({
       where: {
         OR: [
@@ -95,9 +92,6 @@ export class GroupService {
           },
         },
         members: {
-          // where: {
-          //   userId,
-          // },
           select: {
             role: true,
           },
@@ -117,7 +111,6 @@ export class GroupService {
     });
   }
 
-  // Create group
   async createGroup(
     userId: string,
     dto: CreateGroupDto,
@@ -151,7 +144,6 @@ export class GroupService {
     return group;
   }
 
-  // Request to join group
   async requestJoinGroup(userId: string, groupId: string) {
     const group = await this.prisma.group.findUnique({
       where: { id: groupId },
@@ -183,14 +175,7 @@ export class GroupService {
     });
   }
 
-  // Get join requests (for admins)
   async getJoinRequests(userId: string, groupId: string) {
-    // const isAdmin = await this.isGroupAdmin(userId, groupId);
-
-    // if (!isAdmin) {
-    //   throw new ForbiddenException('Only admins can view join requests');
-    // }
-
     return this.prisma.groupMember.findMany({
       where: {
         groupId,
@@ -202,13 +187,7 @@ export class GroupService {
     });
   }
 
-  // Approve join request
   async approveJoinRequest(adminId: string, groupId: string, userId: string) {
-    // const isAdmin = await this.isGroupAdmin(adminId, groupId);
-    // if (!isAdmin) {
-    //   throw new ForbiddenException('Only admins can approve join requests');
-    // }
-
     return this.prisma.groupMember.update({
       where: {
         userId_groupId: {
@@ -223,7 +202,6 @@ export class GroupService {
     });
   }
 
-  // Reject join request
   async rejectJoinRequest(
     adminId: string,
     id: string,
@@ -277,12 +255,6 @@ export class GroupService {
       if (!memberExists) {
         throw new NotFoundException('Member not found in this group');
       }
-
-      // Verify admin permissions
-      // const isAdmin = await this.isGroupAdmin(adminId, id);
-      // if (!isAdmin) {
-      //   throw new ForbiddenException('Only admins can reject join requests');
-      // }
 
       return this.prisma.groupMember.delete({
         where: {

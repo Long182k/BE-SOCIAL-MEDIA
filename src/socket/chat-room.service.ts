@@ -9,16 +9,14 @@ export class ChatRoomService {
   async createDirectChat(params: CreateDirectChatDTO): Promise<any> {
     const { senderId, receiverId, name, type } = params;
 
-    // Ensure the type is either 'DIRECT' or 'GROUP'
     if (!['DIRECT', 'GROUP'].includes(type)) {
       throw new Error(`Invalid chat room type: ${type}`);
     }
 
-    // Create the chat room
     const chatRoom = await this.prisma.chatRoom.create({
       data: {
         type,
-        name: type === 'DIRECT' ? `${senderId}_${receiverId}` : name, // Use dynamic name for DIRECT chats
+        name: type === 'DIRECT' ? `${senderId}_${receiverId}` : name,
         creatorId: senderId,
         participants: {
           createMany: {

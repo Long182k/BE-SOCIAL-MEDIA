@@ -238,7 +238,6 @@ export class AdminService {
     ]);
 
     const enrichedUsers = users.map((user) => {
-      // Calculate sentiment ratios
       const postSentiments = user.posts.reduce(
         (acc, post) => {
           acc[post.sentiment] = (acc[post.sentiment] || 0) + 1;
@@ -258,7 +257,6 @@ export class AdminService {
       const totalPosts = user.posts.length;
       const totalComments = user.comments.length;
 
-      // Remove the raw posts and comments data
       const { posts, comments, ...userData } = user;
 
       return {

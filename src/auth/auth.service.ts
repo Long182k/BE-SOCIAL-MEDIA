@@ -1,7 +1,7 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import refreshTokenJwtConfig from './@config/refresh_token-jwt.config'; // Adjust the path as needed
+import refreshTokenJwtConfig from './@config/refresh_token-jwt.config'; 
 import { ConfigType } from '@nestjs/config';
 import * as argon from 'argon2';
 import { UpdateHashedRefreshTokenDTO } from 'src/users/dto/update-user.dto';
@@ -50,8 +50,6 @@ export class AuthService {
     };
 
     await this.usersService.updateHashedRefreshToken(payloadUpdate);
-
-    // TODO: Store hashedRefreshToken into Redis
 
     return {
       accessToken,
@@ -153,7 +151,6 @@ export class AuthService {
       hashedRefreshToken: null,
     };
 
-    // Update both hashedRefreshToken and lastLoginAt
     await this.prisma.user.update({
       where: { id: userId },
       data: {

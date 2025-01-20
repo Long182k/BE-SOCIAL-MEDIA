@@ -274,8 +274,6 @@ export class EventsService {
       (a) => a.userId === adminUserId && a.role === AttendeeRole.ADMIN,
     );
 
-    // if (!isAdmin)
-    //   throw new ForbiddenException('Only event admins can approve requests');
 
     return this.prisma.eventAttendee.update({
       where: {
@@ -297,7 +295,6 @@ export class EventsService {
     adminId: string,
   ) {
     if (cancelledUserId !== 'undefined') {
-      // Admin cancel attendance
       const event = await this.prisma.event.findUnique({
         where: { id },
         include: { attendees: true },
@@ -314,7 +311,6 @@ export class EventsService {
         },
       });
     } else {
-      // User cancel attendance
       return this.prisma.eventAttendee.delete({
         where: {
           userId_eventId: {
@@ -605,7 +601,6 @@ export class EventsService {
                 some: {
                   userId,
                   status: AttendeeStatus.ENROLL,
-                  // role: AttendeeRole.ATTENDEE || AttendeeRole.ADMIN,
                 },
               },
             },

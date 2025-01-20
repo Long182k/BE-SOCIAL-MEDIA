@@ -110,7 +110,6 @@ export class UserRepository {
 
     const updateData: Partial<User> = {};
 
-    // Only include fields that are provided
     if (data.userName !== undefined) updateData.userName = data.userName;
     if (data.bio !== undefined) updateData.bio = data.bio;
     if (data.dateOfBirth !== undefined)

@@ -16,14 +16,12 @@ export class GroupPostService {
     private cloudinaryService: CloudinaryService,
   ) {}
 
-  // Create post in group
   async createGroupPost(
     userId: string,
     groupId: string,
     dto: CreatePostDto,
     files: Express.Multer.File[],
   ) {
-    // Check if user is member of the group
     const member = await this.prisma.groupMember.findUnique({
       where: {
         userId_groupId: {
@@ -37,10 +35,8 @@ export class GroupPostService {
       throw new ForbiddenException('Only group members can create posts');
     }
 
-    // Evaluate content using NLP service
     await this.nlpService.evaluateContent(dto.content);
 
-    // Upload files if any
     let attachments = undefined;
     if (files?.length > 0) {
       const uploadedFiles =
@@ -67,7 +63,6 @@ export class GroupPostService {
     });
   }
 
-  // Get group posts
   async getGroupPosts(groupId: string) {
     return this.prisma.post.findMany({
       where: {
@@ -89,7 +84,6 @@ export class GroupPostService {
     });
   }
 
-  // Update group post
   async updateGroupPost(
     userId: string,
     groupId: string,

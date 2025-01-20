@@ -51,7 +51,7 @@ export class ChatMessageService {
       where: { chatRoomId },
       include: {
         user: true,
-        attachments: true, // Include attachments the same way as posts/comments
+        attachments: true,
       },
     });
   }
