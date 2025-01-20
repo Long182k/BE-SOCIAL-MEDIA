@@ -54,7 +54,7 @@ The platform implements advanced Natural Language Processing to:
 ### Prerequisites
 
 - Node.js (v16 or higher)
-- PNPM package manager
+- PNPM package manager (You can use NPM OR Yarn if you want)
 - PostgreSQL database
 
 ### Installation
@@ -104,20 +104,41 @@ The application is built using NestJS framework with a modular architecture:
 ## Some API Endpoints Sample
 
 ### Content Management
-
 - `POST /posts` - Create new post (with automatic sentiment analysis)
 - `GET /posts` - Get all posts with pagination
 - `GET /posts/:id` - Get specific post with sentiment data
 - `PUT /posts/:id` - Update post
 - `DELETE /posts/:id` - Delete post
 
-### NLP Analysis
+### Group Management
+- `POST /groups` - Create new group
+- `GET /groups` - Get all groups with pagination
+- `GET /groups/:id` - Get specific group details
+- `PUT /groups/:id` - Update group information
+- `DELETE /groups/:id` - Delete group
+- `POST /groups/:id/join` - Join a group
+- `POST /groups/:id/leave` - Leave a group
+- `GET /groups/:id/members` - Get group members
+- `POST /groups/:id/remove-member` - Remove member from group
 
-- `POST /nlp/analyze` - Analyze content sentiment
-- `POST /nlp/evaluate` - Evaluate content appropriateness
-- `GET /nlp/stats` - Get content analysis statistics
+### Group Posts
+- `POST /group-posts/:groupId` - Create post in group
+- `GET /group-posts/:groupId` - Get all posts in group
+- `PUT /group-posts/:id` - Update group post
+- `DELETE /group-posts/:id` - Delete group post
+- `GET /group-posts/:groupId/feed` - Get group feed with pagination
 
-[Previous endpoints remain the same...]
+### Events
+- `POST /events` - Create new event
+- `GET /events` - Get all events with pagination
+- `GET /events/:id` - Get specific event details
+- `PUT /events/:id` - Update event information
+- `DELETE /events/:id` - Delete event
+- `POST /events/:id/rsvp` - RSVP to an event
+- `GET /events/:id/attendees` - Get event attendees
+- `GET /events/upcoming` - Get upcoming events
+- `GET /events/past` - Get past events
+
 
 ## Environment Variables
 
