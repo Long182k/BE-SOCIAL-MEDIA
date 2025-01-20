@@ -99,40 +99,30 @@ export class GroupPostService {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
       include: {
-        user: true,
+        attachments: true,
       },
     });
 
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.userId !== userId) throw new ForbiddenException('Access denied');
 
-    const member = await this.prisma.groupMember.findUnique({
-      where: {
-        userId_groupId: {
-          userId,
-          groupId,
-        },
-      },
-    });
-
-    // Check if user is post owner or group admin
-    if (post.userId !== userId && member?.role !== 'ADMIN') {
-      throw new ForbiddenException(
-        'Only post owner or group admin can update this post',
-      );
+    // If we have new attachments, create them
+    let attachmentsToCreate = [];
+    if (dto.attachments && dto.attachments.length > 0) {
+      attachmentsToCreate = dto.attachments.map((attachment) => ({
+        type: attachment.type,
+        url: attachment.url,
+      }));
     }
 
     return this.prisma.post.update({
       where: { id: postId },
       data: {
         content: dto.content,
-        attachments: dto.attachments
-          ? {
-              deleteMany: {},
-              create: dto.attachments,
-            }
-          : undefined,
+        attachments: {
+          deleteMany: {}, // Delete existing attachments
+          create: attachmentsToCreate, // Create new ones if they exist
+        },
       },
       include: {
         user: true,

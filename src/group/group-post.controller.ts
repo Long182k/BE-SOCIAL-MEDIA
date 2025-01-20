@@ -37,7 +37,7 @@ export class GroupPostController {
     return this.groupPostService.getGroupPosts(groupId);
   }
 
-  @Put(':postId')
+  @Put('/edit/:postId/:groupId')
   updateGroupPost(
     @CurrentUser('userId') userId: string,
     @Param('groupId') groupId: string,
@@ -47,7 +47,7 @@ export class GroupPostController {
     return this.groupPostService.updateGroupPost(userId, groupId, postId, dto);
   }
 
-  @Delete(':postId')
+  @Delete('/delete/:postId/:groupId')
   deleteGroupPost(
     @CurrentUser('userId') userId: string,
     @Param('groupId') groupId: string,

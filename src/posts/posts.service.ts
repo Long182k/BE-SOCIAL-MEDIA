@@ -73,6 +73,7 @@ export class PostsService {
           content: {
             contains: search,
           },
+          groupId: null,
         },
         include: {
           user: true,
@@ -100,6 +101,7 @@ export class PostsService {
           content: {
             contains: search,
           },
+          groupId: null,
         },
       }),
     ]);
