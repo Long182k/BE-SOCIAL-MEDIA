@@ -1,7 +1,12 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import refreshTokenJwtConfig from './@config/refresh_token-jwt.config'; 
+import refreshTokenJwtConfig from './@config/refresh_token-jwt.config';
 import { ConfigType } from '@nestjs/config';
 import * as argon from 'argon2';
 import { UpdateHashedRefreshTokenDTO } from 'src/users/dto/update-user.dto';
@@ -9,6 +14,7 @@ import { CreateUserDTO } from 'src/users/dto/create-user.dto';
 import { UserRepository } from 'src/users/users.repository';
 import { PrismaService } from 'src/prisma.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +25,7 @@ export class AuthService {
     @Inject(refreshTokenJwtConfig.KEY)
     private refreshTokenConfig: ConfigType<typeof refreshTokenJwtConfig>,
     private prisma: PrismaService,
+    private readonly mailerService: MailerService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -186,5 +193,38 @@ export class AuthService {
       where: { id: userId },
       data: { hashedPassword },
     });
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.usersService.findUserByKeyword({ email });
+    if (!user) {
+      throw new NotFoundException('User with this email does not exist');
+    }
+    const newPassword = Math.random().toString(36).slice(-6);
+
+    const hashedPassword = await this.hashPassword(newPassword);
+
+    await this.prisma.user.update({
+      where: { email },
+      data: { hashedPassword },
+    });
+
+    await this.mailerService.sendMail({
+      to: email,
+      subject: 'Friendzii Social Media Platform - Password Reset',
+      template: 'forgot-password',
+      context: {
+        name: user.userName,
+        newPassword: newPassword,
+      },
+    });
+
+    return {
+      message: 'Password reset instructions have been sent to your email',
+    };
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    return argon.hash(password);
   }
 }

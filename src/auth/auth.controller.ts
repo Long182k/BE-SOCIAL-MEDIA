@@ -16,6 +16,7 @@ import { JwtAuthGuard } from './@guard/jwt-auth.guard';
 import { RefreshAuthGuard } from './@guard/refresh-auth.guard';
 import { AuthService } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -77,5 +78,12 @@ export class AuthController {
       req.user.userId,
       changePasswordDto,
     );
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return await this.authService.forgotPassword(forgotPasswordDto.email);
   }
 }
