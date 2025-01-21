@@ -26,16 +26,16 @@ import { PrismaService } from 'src/prisma.service';
     ConfigModule.forFeature(refreshJwtConfig),
     MailerModule.forRoot({
       transport: {
-        host: 'smtp.gmail.com',
-        port: 465,
+        host: process.env.EMAIL_HOST,
+        port: Number(process.env.EMAIL_PORT),
         secure: true,
         auth: {
-          user: 'thanhlongins1820@gmail.com',
-          pass: 'aick xpwm uwub vstr',
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD,
         },
       },
       defaults: {
-        from: '"Friendzii Social Media" <thanhlongins1820@gmail.com>',
+        from: `"Friendzii Social Media" <${process.env.EMAIL_USER}>`,
       },
       template: {
         dir: process.cwd() + '/src/mail/templates',
